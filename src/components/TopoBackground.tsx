@@ -3,7 +3,7 @@ import { createNoise2D } from 'simplex-noise'
 import { useEffect, useRef } from 'react'
 
 type TopoBackgroundProps = {
-  routePath?: string
+  routePath: string
 }
 
 type TerrainSnapshot = {
@@ -11,10 +11,6 @@ type TerrainSnapshot = {
   height: number
   terrainCanvas: HTMLCanvasElement
 }
-
-// Default snaking route path (normalized to a 1000x600 coordinate grid)
-const DEFAULT_ROUTE_PATH =
-  'M 45 570 C 160 504, 70 414, 260 366 S 420 468, 400 312 S 640 168, 540 222 S 800 348, 720 156 S 960 24, 860 78 S 1040 132, 980 30'
 
 const drawAuxiliaryRouteLines = (
   context: CanvasRenderingContext2D,
@@ -119,7 +115,7 @@ const buildTerrain = (width: number, height: number): TerrainSnapshot => {
   return { width, height, terrainCanvas }
 }
 
-export const TopoBackground = ({ routePath = DEFAULT_ROUTE_PATH }: TopoBackgroundProps) => {
+export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const pathElementRef = useRef<SVGPathElement | null>(null)
   const snapshotRef = useRef<TerrainSnapshot | null>(null)
