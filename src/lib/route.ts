@@ -16,47 +16,47 @@ export const createRoutePath = (width: number, height: number) => {
 
   // All values are normalized viewport ratios.
   // x = width * ratio, y = height * ratio (y grows downward).
-  // This path now uses 16 anchor points for finer shaping.
+  // This path now uses 16 anchor points evenly distributed for accurate positioning.
   // Ratios may overshoot for stronger curves, but output is clamped to viewport-safe bounds.
   const anchors: Array<[number, number]> = [
-    [0.01, 0.04],
-    [0.06, 0.14],
-    [0.11, 0.3],
-    [0.17, 0.52],
-    [0.24, 0.75],
-    [0.31, 0.92],
-    [0.39, 0.82],
-    [0.47, 0.64],
-    [0.55, 0.5],
-    [0.62, 0.58],
-    [0.69, 0.43],
-    [0.76, 0.28],
-    [0.83, 0.17],
-    [0.9, 0.22],
-    [0.95, 0.12],
-    [0.995, 0.03],
+    [0.02, 0.05],
+    [0.08, 0.15],
+    [0.14, 0.25],
+    [0.20, 0.40],
+    [0.26, 0.60],
+    [0.32, 0.80],
+    [0.38, 0.85],
+    [0.44, 0.70],
+    [0.50, 0.55],
+    [0.56, 0.65],
+    [0.62, 0.50],
+    [0.68, 0.35],
+    [0.74, 0.22],
+    [0.80, 0.15],
+    [0.90, 0.10],
+    [0.98, 0.04],
   ]
 
   // First cubic segment requires two control points.
   // Slight overshoot (<0 or >1) is intentional for broader arcs.
-  const firstControls: [number, number, number, number] = [-0.01, 0.0, 0.03, 0.07]
+  const firstControls: [number, number, number, number] = [0.0, 0.0, 0.05, 0.10]
 
   // Remaining controls map to anchors[2]..anchors[15] as smooth S segments.
   const smoothControls: Array<[number, number]> = [
-    [0.1, 0.2],
-    [0.15, 0.4],
-    [0.21, 0.63],
-    [0.28, 0.88],
-    [0.35, 1.04],
-    [0.43, 0.9],
-    [0.51, 0.67],
-    [0.59, 0.45],
-    [0.66, 0.63],
-    [0.73, 0.38],
-    [0.8, 0.2],
-    [0.87, 0.1],
-    [0.93, 0.29],
-    [1.04, -0.03],
+    [0.12, 0.20],
+    [0.18, 0.32],
+    [0.24, 0.50],
+    [0.30, 0.70],
+    [0.35, 0.88],
+    [0.41, 0.78],
+    [0.47, 0.62],
+    [0.53, 0.60],
+    [0.59, 0.58],
+    [0.65, 0.42],
+    [0.71, 0.28],
+    [0.77, 0.18],
+    [0.85, 0.12],
+    [0.94, 0.07],
   ]
 
   const points = anchors.map(([x, y]) => [toX(x), toY(y)] as const)
