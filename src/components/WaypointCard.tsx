@@ -30,7 +30,7 @@ export const WaypointCard: React.FC<WaypointCardProps> = ({
 
   return (
     <div 
-      className="absolute flex items-center gap-4 p-3 bg-[#1A1A1A] border border-[#333] rounded-md shadow-2xl backdrop-blur-sm bg-opacity-90 transition-transform hover:scale-105 hover:border-lime-400 cursor-pointer group z-10"
+      className="absolute flex items-center gap-2 p-2 bg-[#1A1A1A] border border-[#333] rounded-md shadow-2xl backdrop-blur-sm bg-opacity-90 transition-transform hover:scale-105 hover:border-lime-400 cursor-pointer group z-10"
       style={{ top, left, transform: 'translate(-50%, -50%)' }} // Centers the card on the exact coordinate
     >
       {/* Icon Container with subtle neon glow on hover */}

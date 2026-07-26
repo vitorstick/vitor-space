@@ -19,10 +19,10 @@ export const createRoutePath = (width: number, height: number) => {
   // This path now uses 16 anchor points evenly distributed for accurate positioning.
   // Ratios may overshoot for stronger curves, but output is clamped to viewport-safe bounds.
   const anchors: Array<[number, number]> = [
-    [0.02, 0.05],
-    [0.08, 0.15],
-    [0.14, 0.25],
-    [0.20, 0.40],
+    [0.01, 0.05],
+    [0.18, 0.15],
+    [0.34, 0.25],
+    [0.26, 0.40],
     [0.26, 0.60],
     [0.32, 0.80],
     [0.38, 0.85],

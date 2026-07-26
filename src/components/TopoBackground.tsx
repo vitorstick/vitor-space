@@ -138,9 +138,9 @@ export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
       context.clearRect(0, 0, canvas.width, canvas.height)
       context.drawImage(snapshotRef.current.terrainCanvas, 0, 0)
 
-      // Scale route to responsive viewport bounds (1000x600 viewBox)
-      const scaleX = window.innerWidth / 1000
-      const scaleY = window.innerHeight / 600
+      // Scale route to match fixed canvas size (1380x660)
+      const scaleX = window.innerWidth / 1380
+      const scaleY = window.innerHeight / 660
 
       context.save()
       context.scale(scaleX, scaleY)

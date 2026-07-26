@@ -119,7 +119,7 @@ export const timeline: TimelineItem[] = [
     title: 'Dialog',
     description: 'Staff Frontend Engineer',
     date: '2024-04',
-    routeProgressPercentage: 0.933,
+    routeProgressPercentage: 0.900,
     type: 'code',
   },
   {
