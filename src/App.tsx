@@ -5,6 +5,7 @@ import { createRoutePath } from './lib/route'
 
 function App() {
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
+  const [scrollProgress, setScrollProgress] = useState(0)
 
   useEffect(() => {
     const updateViewport = () => {
@@ -19,6 +20,20 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const wheelSensitivity = 0.00005
+
+    const handleWheel = (event: WheelEvent) => {
+      setScrollProgress((previous) => {
+        const next = previous + event.deltaY * wheelSensitivity
+        return Math.min(1, Math.max(0, next))
+      })
+    }
+
+    window.addEventListener('wheel', handleWheel, { passive: true })
+    return () => window.removeEventListener('wheel', handleWheel)
+  }, [])
+
   const routePath = useMemo(() => {
     if (!viewport.width || !viewport.height) {
       return ''
@@ -29,7 +44,7 @@ function App() {
 
   return (
     <main className="relative min-h-screen overflow-x-clip text-slate-100">
-      {routePath ? <TopoBackground routePath={routePath} /> : null}
+      {routePath ? <TopoBackground routePath={routePath} scrollProgress={scrollProgress} /> : null}
       {routePath ? <WaypointsOverlay routePath={routePath} /> : null}
 
       {/* <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 pt-7 md:pt-10">

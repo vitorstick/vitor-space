@@ -21,7 +21,7 @@ const clampToRange = (value: number, min: number, max: number) =>
 export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
   const [positions, setPositions] = useState<WaypointPosition[]>([]);
 
-  const dialogRef = useRef(null);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [activeEntry, setActiveEntry] = useState<TimelineItem | null>(null);
 
   useEffect(() => {
@@ -77,8 +77,19 @@ export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
     dialogRef.current?.showModal();
   };
 
-  const closeDialog = () => {
-    dialogRef.current?.close();
+const closeDialog = () => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    
+    // 1. Add the closing animation class
+    dialog.classList.add('dialog-closing');
+    
+    // 2. Wait for animation to finish, then actually close
+    dialog.addEventListener('animationend', function handleAnimationEnd() {
+      dialog.classList.remove('dialog-closing');
+      dialog.close();
+      dialog.removeEventListener('animationend', handleAnimationEnd);
+    }, { once: true });
   };
 
   return (

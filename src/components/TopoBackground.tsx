@@ -1,9 +1,11 @@
+import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { contours } from 'd3-contour'
 import { createNoise2D } from 'simplex-noise'
 import { useEffect, useRef } from 'react'
 
 type TopoBackgroundProps = {
   routePath: string
+  scrollProgress: number
 }
 
 type TerrainSnapshot = {
@@ -44,6 +46,52 @@ const drawAuxiliaryRouteLines = (
     context.stroke(path2d)
     context.restore()
   }
+}
+
+const drawScrollBullet = (
+  context: CanvasRenderingContext2D,
+  path: SVGPathElement,
+  progress: number
+) => {
+  const pathD = path.getAttribute('d')
+  if (!pathD) return
+
+  const rawPath = MotionPathPlugin.getRawPath(pathD)
+  const point = MotionPathPlugin.getPositionOnPath(rawPath, progress, true)
+
+  if (!point) return
+
+  const bulletRadius = 6
+
+  // Outer glow
+  context.save()
+  context.fillStyle = 'rgba(202, 250, 92, 0.3)'
+  context.beginPath()
+  context.arc(point.x, point.y, bulletRadius * 2.5, 0, Math.PI * 2)
+  context.fill()
+  context.restore()
+
+  // Middle glow
+  context.save()
+  context.fillStyle = 'rgba(202, 250, 92, 0.5)'
+  context.beginPath()
+  context.arc(point.x, point.y, bulletRadius * 1.5, 0, Math.PI * 2)
+  context.fill()
+  context.restore()
+
+  // Core bullet
+  context.save()
+  context.fillStyle = '#caef5c'
+  context.beginPath()
+  context.arc(point.x, point.y, bulletRadius, 0, Math.PI * 2)
+  context.fill()
+
+  // Inner highlight
+  context.fillStyle = '#ffffff'
+  context.beginPath()
+  context.arc(point.x - bulletRadius * 0.3, point.y - bulletRadius * 0.3, bulletRadius * 0.4, 0, Math.PI * 2)
+  context.fill()
+  context.restore()
 }
 
 const buildTerrain = (width: number, height: number): TerrainSnapshot => {
@@ -115,7 +163,7 @@ const buildTerrain = (width: number, height: number): TerrainSnapshot => {
   return { width, height, terrainCanvas }
 }
 
-export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
+export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const pathElementRef = useRef<SVGPathElement | null>(null)
   const snapshotRef = useRef<TerrainSnapshot | null>(null)
@@ -145,6 +193,7 @@ export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
       context.save()
       context.scale(scaleX, scaleY)
       drawAuxiliaryRouteLines(context, pathElementRef.current)
+      drawScrollBullet(context, pathElementRef.current, scrollProgress)
       context.restore()
     }
 
@@ -170,7 +219,7 @@ export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
     return () => {
       window.removeEventListener('resize', rebuild)
     }
-  }, [routePath])
+  }, [routePath, scrollProgress])
 
   return <canvas ref={canvasRef} className="fixed inset-0 -z-10" aria-hidden="true" />
 }
