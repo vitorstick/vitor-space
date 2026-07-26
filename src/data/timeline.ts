@@ -7,7 +7,7 @@ export const timeline: TimelineItem[] = [
     title: 'Mealhada',
     description: 'Mealhada',
     date: '1982-05',
-    routeProgressPercentage: 0.04,
+    routeProgressPercentage: 0.0,
     type: 'location',
   },
   {
@@ -15,7 +15,7 @@ export const timeline: TimelineItem[] = [
     title: 'Coimbra',
     description: 'Coimbra',
     date: '2000-09',
-    routeProgressPercentage: 0.1,
+    routeProgressPercentage: 0.067,
     type: 'location',
   },
   {
@@ -23,7 +23,7 @@ export const timeline: TimelineItem[] = [
     title: 'Porto',
     description: 'Porto',
     date: '2013-05',
-    routeProgressPercentage: 0.16,
+    routeProgressPercentage: 0.133,
     type: 'location',
   },
   {
@@ -31,7 +31,7 @@ export const timeline: TimelineItem[] = [
     title: 'WeCreateYou',
     description: 'Web Developer',
     date: '2015-04',
-    routeProgressPercentage: 0.22,
+    routeProgressPercentage: 0.2,
     type: 'code',
   },
   {
@@ -39,7 +39,7 @@ export const timeline: TimelineItem[] = [
     title: 'Lisboa',
     description: 'Lisboa',
     date: '2016-04',
-    routeProgressPercentage: 0.28,
+    routeProgressPercentage: 0.267,
     type: 'location',
   },
   {
@@ -47,12 +47,12 @@ export const timeline: TimelineItem[] = [
     title: 'Global Media Group',
     description: 'Frontend Developer',
     date: '2016-04',
-    routeProgressPercentage: 0.34,
+    routeProgressPercentage: 0.333,
     type: 'code',
   },
   {
     id: 'anf-06',
-    title: 'ANF - Portuguese National Pharmacies Association',
+    title: 'ANF - Portuguese Pharmacies',
     description: 'Frontend Developer',
     date: '2017-09',
     routeProgressPercentage: 0.4,
@@ -63,7 +63,7 @@ export const timeline: TimelineItem[] = [
     title: 'BNP Paribas',
     description: 'Frontend & Mobile Developer',
     date: '2018-05',
-    routeProgressPercentage: 0.46,
+    routeProgressPercentage: 0.467,
     type: 'code',
   },
   {
@@ -71,7 +71,7 @@ export const timeline: TimelineItem[] = [
     title: 'Hovione',
     description: 'Full Stack Software Developer',
     date: '2019-03',
-    routeProgressPercentage: 0.52,
+    routeProgressPercentage: 0.533,
     type: 'code',
   },
   {
@@ -79,7 +79,7 @@ export const timeline: TimelineItem[] = [
     title: 'Rydoo',
     description: 'Senior Frontend Developer',
     date: '2020-08',
-    routeProgressPercentage: 0.58,
+    routeProgressPercentage: 0.6,
     type: 'code',
   },
   {
@@ -87,7 +87,7 @@ export const timeline: TimelineItem[] = [
     title: 'Pagerduty',
     description: 'Senior Frontend Developer',
     date: '2022-07',
-    routeProgressPercentage: 0.64,
+    routeProgressPercentage: 0.667,
     type: 'code',
   },
   {
@@ -95,7 +95,7 @@ export const timeline: TimelineItem[] = [
     title: 'Berlin',
     description: 'Berlin',
     date: '2023-06',
-    routeProgressPercentage: 0.7,
+    routeProgressPercentage: 0.733,
     type: 'location',
   },
   {
@@ -103,7 +103,7 @@ export const timeline: TimelineItem[] = [
     title: 'BiGenius',
     description: 'Senior Frontend Developer',
     date: '2023-06',
-    routeProgressPercentage: 0.76,
+    routeProgressPercentage: 0.8,
     type: 'code',
   },
   {
@@ -111,7 +111,7 @@ export const timeline: TimelineItem[] = [
     title: 'Amsterdam',
     description: 'Amsterdam',
     date: '2024-04',
-    routeProgressPercentage: 0.82,
+    routeProgressPercentage: 0.867,
     type: 'location',
   },
   {
@@ -119,7 +119,7 @@ export const timeline: TimelineItem[] = [
     title: 'Dialog',
     description: 'Staff Frontend Engineer',
     date: '2024-04',
-    routeProgressPercentage: 0.88,
+    routeProgressPercentage: 0.933,
     type: 'code',
   },
   {
@@ -127,7 +127,7 @@ export const timeline: TimelineItem[] = [
     title: 'SemmieWealth',
     description: 'Senior Frontend Developer',
     date: '2025-10',
-    routeProgressPercentage: 0.94,
+    routeProgressPercentage: 1.0,
     type: 'code',
   },
 ]
