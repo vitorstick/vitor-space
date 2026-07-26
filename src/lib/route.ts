@@ -2,65 +2,80 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
 
 export const createRoutePath = (width: number, height: number) => {
-  // All points are proportional to viewport size:
-  // x = width * ratio, y = height * ratio.
-  // y grows downward, so smaller y means higher on screen.
+  const horizontalPadding = Math.max(24, width * 0.015)
+  const topPadding = Math.max(20, height * 0.03)
+  const bottomPadding = Math.max(72, height * 0.11)
 
-  // Start near lower-left.
-  const x0 = width * 0.001
-  const y0 = height * 0.99
+  const minX = horizontalPadding
+  const maxX = width - horizontalPadding
+  const minY = topPadding
+  const maxY = height - bottomPadding
 
-  // Segment 1 (C): initial climb.
-  // c1/c2 are the Bezier control points, x1/y1 is the segment end.
-  const c1x = width * 0.16
-  const c1y = height * 0.84
-  const c2x = width * 0.07
-  const c2y = height * 0.69
-  const x1 = width * 0.16
-  const y1 = height * 0.51
+  const toX = (ratio: number) => clamp(ratio * width, minX, maxX)
+  const toY = (ratio: number) => clamp(ratio * height, minY, maxY)
 
-  // Segment 2 (S): smooth continuation that dips toward lower-middle.
-  // S reuses the previous tangent; only one new control point is provided.
-  const c3x = width * 0.42
-  const c3y = height * 0.78
-  const x2 = width * 0.4
-  const y2 = height * 0.32
+  // All values are normalized viewport ratios.
+  // x = width * ratio, y = height * ratio (y grows downward).
+  // This path now uses 16 anchor points for finer shaping.
+  // Ratios may overshoot for stronger curves, but output is clamped to viewport-safe bounds.
+  const anchors: Array<[number, number]> = [
+    [0.01, 0.04],
+    [0.06, 0.14],
+    [0.11, 0.3],
+    [0.17, 0.52],
+    [0.24, 0.75],
+    [0.31, 0.92],
+    [0.39, 0.82],
+    [0.47, 0.64],
+    [0.55, 0.5],
+    [0.62, 0.58],
+    [0.69, 0.43],
+    [0.76, 0.28],
+    [0.83, 0.17],
+    [0.9, 0.22],
+    [0.95, 0.12],
+    [0.995, 0.03],
+  ]
 
-  // Segment 3 (S): turn upward into mid-right.
-  const c4x = width * 0.64
-  const c4y = height * 0.28
-  const x3 = width * 0.54
-  const y3 = height * 0.37
+  // First cubic segment requires two control points.
+  // Slight overshoot (<0 or >1) is intentional for broader arcs.
+  const firstControls: [number, number, number, number] = [-0.01, 0.0, 0.03, 0.07]
 
-  // Segment 4 (S): broad swing to the right with a gentle rise.
-  const c5x = width * 0.8
-  const c5y = height * 0.58
-  const x4 = width * 0.72
-  const y4 = height * 0.26
+  // Remaining controls map to anchors[2]..anchors[15] as smooth S segments.
+  const smoothControls: Array<[number, number]> = [
+    [0.1, 0.2],
+    [0.15, 0.4],
+    [0.21, 0.63],
+    [0.28, 0.88],
+    [0.35, 1.04],
+    [0.43, 0.9],
+    [0.51, 0.67],
+    [0.59, 0.45],
+    [0.66, 0.63],
+    [0.73, 0.38],
+    [0.8, 0.2],
+    [0.87, 0.1],
+    [0.93, 0.29],
+    [1.04, -0.03],
+  ]
 
-  // Segment 5 (S): push toward upper-right.
-  const c6x = width * 0.96
-  const c6y = height * 0.04
-  const x5 = width * 0.86
-  const y5 = height * 0.13
+  const points = anchors.map(([x, y]) => [toX(x), toY(y)] as const)
+  const [x0, y0] = points[0]
+  const [x1, y1] = points[1]
+  const [c1x, c1y, c2x, c2y] = firstControls
 
-  // Segment 6 (S): final taper ending near top-right edge.
-  const c7x = width * 1.04
-  const c7y = height * 0.22
-  const x6 = width * 0.98
-  const y6 = height * 0.05
-
-  // Path command order:
-  // M = move to start, C = cubic Bezier, S = smooth cubic Bezier.
-  return [
+  const commands = [
     `M ${x0} ${y0}`,
-    `C ${c1x} ${c1y}, ${c2x} ${c2y}, ${x1} ${y1}`,
-    `S ${c3x} ${c3y}, ${x2} ${y2}`,
-    `S ${c4x} ${c4y}, ${x3} ${y3}`,
-    `S ${c5x} ${c5y}, ${x4} ${y4}`,
-    `S ${c6x} ${c6y}, ${x5} ${y5}`,
-    `S ${c7x} ${c7y}, ${x6} ${y6}`,
-  ].join(' ')
+    `C ${toX(c1x)} ${toY(c1y)}, ${toX(c2x)} ${toY(c2y)}, ${x1} ${y1}`,
+  ]
+
+  for (let i = 2; i < points.length; i++) {
+    const [cx, cy] = smoothControls[i - 2]
+    const [x, y] = points[i]
+    commands.push(`S ${toX(cx)} ${toY(cy)}, ${x} ${y}`)
+  }
+
+  return commands.join(' ')
 }
 
 export const clampProgress = (progress: number) => clamp(progress, 0, 1)

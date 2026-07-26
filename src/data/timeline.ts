@@ -1,50 +1,133 @@
-export type TimelineItem = {
-  id: string
-  title: string
-  description: string
-  date: string
-  routeProgressPercentage: number
-}
+
+import type { TimelineItem } from '../models/TimelineItem';
 
 export const timeline: TimelineItem[] = [
   {
-    id: 'atlas-01',
-    title: 'Atlas Commerce Rebuild',
-    description:
-      'Migrated a legacy storefront to a component-driven architecture with server-side rendering and faster checkout flows.',
-    date: '2023-04',
-    routeProgressPercentage: 0.12,
+    id: 'mealhada-00',
+    title: 'Mealhada',
+    description: 'Mealhada',
+    date: '1982-05',
+    routeProgressPercentage: 0.04,
+    type: 'location',
   },
   {
-    id: 'signal-02',
-    title: 'SignalOps Dashboard',
-    description:
-      'Designed a telemetry dashboard that unified incident data and reduced triage time for on-call engineers.',
-    date: '2023-11',
-    routeProgressPercentage: 0.31,
+    id: 'coimbra-01',
+    title: 'Coimbra',
+    description: 'Coimbra',
+    date: '2000-09',
+    routeProgressPercentage: 0.1,
+    type: 'location',
   },
   {
-    id: 'northstar-03',
-    title: 'Northstar Design System',
-    description:
-      'Introduced tokens, accessibility guardrails, and reusable patterns consumed by four product teams.',
-    date: '2024-05',
+    id: 'porto-02',
+    title: 'Porto',
+    description: 'Porto',
+    date: '2013-05',
+    routeProgressPercentage: 0.16,
+    type: 'location',
+  },
+  {
+    id: 'wecreateyou-03',
+    title: 'WeCreateYou',
+    description: 'Web Developer',
+    date: '2015-04',
+    routeProgressPercentage: 0.22,
+    type: 'code',
+  },
+  {
+    id: 'lisboa-04',
+    title: 'Lisboa',
+    description: 'Lisboa',
+    date: '2016-04',
+    routeProgressPercentage: 0.28,
+    type: 'location',
+  },
+  {
+    id: 'global-media-group-05',
+    title: 'Global Media Group',
+    description: 'Frontend Developer',
+    date: '2016-04',
+    routeProgressPercentage: 0.34,
+    type: 'code',
+  },
+  {
+    id: 'anf-06',
+    title: 'ANF - Portuguese National Pharmacies Association',
+    description: 'Frontend Developer',
+    date: '2017-09',
+    routeProgressPercentage: 0.4,
+    type: 'code',
+  },
+  {
+    id: 'bnp-paribas-07',
+    title: 'BNP Paribas',
+    description: 'Frontend & Mobile Developer',
+    date: '2018-05',
+    routeProgressPercentage: 0.46,
+    type: 'code',
+  },
+  {
+    id: 'hovione-08',
+    title: 'Hovione',
+    description: 'Full Stack Software Developer',
+    date: '2019-03',
     routeProgressPercentage: 0.52,
+    type: 'code',
   },
   {
-    id: 'relay-04',
-    title: 'Relay Data Platform',
-    description:
-      'Built an event ingestion layer with real-time views and historical replay for product analytics.',
-    date: '2024-12',
-    routeProgressPercentage: 0.74,
+    id: 'rydoo-09',
+    title: 'Rydoo',
+    description: 'Senior Frontend Developer',
+    date: '2020-08',
+    routeProgressPercentage: 0.58,
+    type: 'code',
   },
   {
-    id: 'orbit-05',
-    title: 'Orbit Mobile Launch',
-    description:
-      'Led cross-platform delivery and rollout strategy, shipping a polished v1 to iOS and Android.',
-    date: '2025-09',
-    routeProgressPercentage: 0.91,
+    id: 'pagerduty-10',
+    title: 'Pagerduty',
+    description: 'Senior Frontend Developer',
+    date: '2022-07',
+    routeProgressPercentage: 0.64,
+    type: 'code',
+  },
+  {
+    id: 'berlin-11',
+    title: 'Berlin',
+    description: 'Berlin',
+    date: '2023-06',
+    routeProgressPercentage: 0.7,
+    type: 'location',
+  },
+  {
+    id: 'bigenius-12',
+    title: 'BiGenius',
+    description: 'Senior Frontend Developer',
+    date: '2023-06',
+    routeProgressPercentage: 0.76,
+    type: 'code',
+  },
+  {
+    id: 'amsterdam-13',
+    title: 'Amsterdam',
+    description: 'Amsterdam',
+    date: '2024-04',
+    routeProgressPercentage: 0.82,
+    type: 'location',
+  },
+  {
+    id: 'dialog-14',
+    title: 'Dialog',
+    description: 'Staff Frontend Engineer',
+    date: '2024-04',
+    routeProgressPercentage: 0.88,
+    type: 'code',
+  },
+  {
+    id: 'semmiewealth-15',
+    title: 'SemmieWealth',
+    description: 'Senior Frontend Developer',
+    date: '2025-10',
+    routeProgressPercentage: 0.94,
+    type: 'code',
   },
 ]

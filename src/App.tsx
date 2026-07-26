@@ -32,7 +32,7 @@ function App() {
       {routePath ? <TopoBackground routePath={routePath} /> : null}
       {routePath ? <WaypointsOverlay routePath={routePath} /> : null}
 
-      <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 pt-7 md:pt-10">
+      {/* <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 pt-7 md:pt-10">
         <div className="mx-auto max-w-6xl">
           <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-lime-200/80 md:text-xs">
             Index / Projects / Journey
@@ -45,7 +45,7 @@ function App() {
             path coordinates to form a technical journey map.
           </p>
         </div>
-      </section>
+      </section> */}
     </main>
   )
 }

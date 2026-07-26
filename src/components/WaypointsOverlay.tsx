@@ -2,6 +2,7 @@ import gsap from 'gsap'
 import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { useEffect, useMemo, useState } from 'react'
 import { timeline } from '../data/timeline'
+import { WaypointCard } from './WaypointCard'
 
 type WaypointsOverlayProps = {
   routePath: string
@@ -12,6 +13,9 @@ type WaypointPosition = {
   x: number
   y: number
 }
+
+const clampToRange = (value: number, min: number, max: number) =>
+  Math.min(max, Math.max(min, value))
 
 export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
   const [positions, setPositions] = useState<WaypointPosition[]>([])
@@ -26,6 +30,15 @@ export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
 
     const computePositions = () => {
       const rawPath = MotionPathPlugin.getRawPath(routePath)
+
+      // Keep cards within viewport after translate(-50%, -50%).
+      const cardWidth = Math.min(352, window.innerWidth * 0.7)
+      const halfCardWidth = cardWidth / 2
+      const minX = halfCardWidth + 16
+      const maxX = window.innerWidth - halfCardWidth - 16
+      const minY = 72
+      const maxY = window.innerHeight - 92
+
       const nextPositions = timeline.map((entry) => {
         const point = MotionPathPlugin.getPositionOnPath(
           rawPath,
@@ -35,8 +48,8 @@ export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
 
         return {
           id: entry.id,
-          x: point.x,
-          y: point.y,
+          x: clampToRange(point.x, minX, maxX),
+          y: clampToRange(point.y, minY, maxY),
         }
       })
 
@@ -64,21 +77,14 @@ export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
         }
 
         return (
-          <article
+          <WaypointCard 
             key={entry.id}
-            className="pointer-events-auto absolute w-[min(22rem,70vw)] -translate-x-1/2 -translate-y-1/2 rounded-md border border-cyan-300/45 bg-slate-950/78 p-4 text-left shadow-[0_0_22px_rgba(34,211,238,0.25)] backdrop-blur-sm"
-            style={{ left: `${position.x}px`, top: `${position.y}px` }}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-cyan-200/90">
-              {entry.date}
-            </p>
-            <h2 className="mt-2 text-base font-semibold leading-tight text-slate-100 md:text-lg">
-              {entry.title}
-            </h2>
-            <p className="mt-2 font-mono text-xs leading-relaxed text-slate-300/85 md:text-[13px]">
-              {entry.description}
-            </p>
-          </article>
+            type={entry.type}
+            date={entry.date}
+            title={entry.title}
+            top={`${position.y}px`}
+            left={`${position.x}px`}
+          />
         )
       })}
     </div>
