@@ -3,7 +3,7 @@ import { createNoise2D } from 'simplex-noise'
 import { useEffect, useRef } from 'react'
 
 type TopoBackgroundProps = {
-  routePath: string
+  routePath?: string
 }
 
 type TerrainSnapshot = {
@@ -12,180 +12,144 @@ type TerrainSnapshot = {
   terrainCanvas: HTMLCanvasElement
 }
 
+// Default snaking route path (normalized to a 1000x600 coordinate grid)
+const DEFAULT_ROUTE_PATH =
+  'M 45 570 C 160 504, 70 414, 260 366 S 420 468, 400 312 S 640 168, 540 222 S 800 348, 720 156 S 960 24, 860 78 S 1040 132, 980 30'
+
 const drawAuxiliaryRouteLines = (
   context: CanvasRenderingContext2D,
-  path: SVGPathElement,
-  totalLength: number,
+  path: SVGPathElement
 ) => {
+  const pathD = path.getAttribute('d')
+  if (!pathD) return
+
+  const path2d = new Path2D(pathD)
+
+  // Layered glowing lines to achieve the neon effect
   const lineConfigs = [
-    { offset: -34, alpha: 0.32, width: 1.2, drift: 10 },
-    { offset: -20, alpha: 0.24, width: 1, drift: 7 },
-    { offset: -10, alpha: 0.2, width: 0.9, drift: 5 },
-    { offset: 12, alpha: 0.22, width: 1, drift: 6 },
-    { offset: 23, alpha: 0.26, width: 1.1, drift: 8 },
-    { offset: 38, alpha: 0.3, width: 1.2, drift: 12 },
+    { strokeStyle: 'rgba(202, 250, 92, 0.12)', lineWidth: 24, blur: 20 },
+    { strokeStyle: 'rgba(202, 250, 92, 0.35)', lineWidth: 10, blur: 10 },
+    { strokeStyle: '#d9f99d', lineWidth: 4, blur: 4 },
+    { strokeStyle: '#ffffff', lineWidth: 1.5, blur: 0 }
   ]
 
   for (const config of lineConfigs) {
-    const steps = Math.max(80, Math.floor(totalLength / 9))
-    context.beginPath()
+    context.save()
+    context.strokeStyle = config.strokeStyle
+    context.lineWidth = config.lineWidth
+    context.lineCap = 'round'
+    context.lineJoin = 'round'
 
-    for (let i = 0; i <= steps; i += 1) {
-      const t = i / steps
-      const lengthAtT = totalLength * t
-      const prev = path.getPointAtLength(Math.max(0, lengthAtT - 0.8))
-      const next = path.getPointAtLength(Math.min(totalLength, lengthAtT + 0.8))
-      const point = path.getPointAtLength(lengthAtT)
-
-      const dx = next.x - prev.x
-      const dy = next.y - prev.y
-      const magnitude = Math.hypot(dx, dy) || 1
-
-      const nx = -dy / magnitude
-      const ny = dx / magnitude
-
-      // Modulate drift to alternate between parallel segments and branching segments.
-      const waveA = Math.sin(t * Math.PI * 2.2)
-      const waveB = Math.sin(t * Math.PI * 8.4)
-      const drift = (waveA * 0.6 + waveB * 0.4) * config.drift
-
-      const x = point.x + nx * (config.offset + drift)
-      const y = point.y + ny * (config.offset + drift)
-
-      if (i === 0) {
-        context.moveTo(x, y)
-      } else {
-        context.lineTo(x, y)
-      }
+    if (config.blur > 0) {
+      context.shadowColor = '#caef5c'
+      context.shadowBlur = config.blur
     }
 
-    context.strokeStyle = `rgba(228, 242, 175, ${config.alpha})`
-    context.lineWidth = config.width
-    context.shadowBlur = 0
-    context.stroke()
+    context.stroke(path2d)
+    context.restore()
   }
 }
 
-const buildTerrain = (width: number, height: number, dpr: number): TerrainSnapshot => {
+const buildTerrain = (width: number, height: number): TerrainSnapshot => {
   const terrainCanvas = document.createElement('canvas')
-  terrainCanvas.width = Math.max(1, Math.floor(width * dpr))
-  terrainCanvas.height = Math.max(1, Math.floor(height * dpr))
-
+  terrainCanvas.width = width
+  terrainCanvas.height = height
   const context = terrainCanvas.getContext('2d')
-  if (!context) {
-    return { width, height, terrainCanvas }
-  }
 
-  context.setTransform(dpr, 0, 0, dpr, 0, 0)
-  context.clearRect(0, 0, width, height)
+  if (!context) return { width, height, terrainCanvas }
 
-  const noise2d = createNoise2D()
-  const cell = 12
-  const cols = Math.ceil(width / cell) + 1
-  const rows = Math.ceil(height / cell) + 1
-  const values: number[] = []
+  // Dark topographic base background
+  context.fillStyle = '#121510'
+  context.fillRect(0, 0, width, height)
 
-  for (let y = 0; y < rows; y += 1) {
-    for (let x = 0; x < cols; x += 1) {
-      const value = noise2d(x * 0.06, y * 0.06)
-      values.push(value)
+  // 1. Generate Simplex Noise Grid
+  const resolution = 12 // Grid step size
+  const cols = Math.ceil(width / resolution) + 1
+  const rows = Math.ceil(height / resolution) + 1
+  const values = new Float64Array(cols * rows)
+  const noise2D = createNoise2D()
+
+  const noiseScale = 0.0025
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const worldX = x * resolution
+      const worldY = y * resolution
+
+      // Multi-octave noise for varied terrain heights
+      const n1 = noise2D(worldX * noiseScale, worldY * noiseScale)
+      const n2 = noise2D(worldX * noiseScale * 2, worldY * noiseScale * 2) * 0.5
+      const n3 = noise2D(worldX * noiseScale * 4, worldY * noiseScale * 4) * 0.25
+
+      values[y * cols + x] = (n1 + n2 + n3 + 1.75) / 3.5 // Normalize to ~[0, 1]
     }
   }
 
-  const thresholdCount = 16
-  const thresholds = Array.from({ length: thresholdCount }, (_, index) => -0.9 + index * 0.12)
-  const contourData = contours().size([cols, rows]).thresholds(thresholds)(values)
+  // 2. Generate Contour Paths via d3-contour
+  const contourGenerator = contours()
+    .size([cols, rows])
+    .thresholds(22)
 
-  context.strokeStyle = 'rgba(132, 171, 196, 0.18)'
-  context.lineWidth = 1
+  const contourData = contourGenerator(Array.from(values))
 
-  for (const contour of contourData) {
-    const polygons = contour.coordinates as number[][][][]
-    context.globalAlpha = 0.18 + ((Number(contour.value) + 1) * 0.03)
+  // 3. Render Topography Lines
+  context.save()
+  context.lineWidth = 1.2
 
-    for (const polygon of polygons) {
-      for (const ring of polygon) {
-        if (ring.length < 2) {
-          continue
-        }
+  contourData.forEach((contour, idx) => {
+    // Subtle opacity variation based on elevation height
+    const alpha = 0.05 + (idx / contourData.length) * 0.16
+    context.strokeStyle = `rgba(140, 165, 120, ${alpha})`
 
-        context.beginPath()
-        context.moveTo(ring[0][0] * cell, ring[0][1] * cell)
+    context.beginPath()
+    contour.coordinates.forEach((polygon) => {
+      polygon.forEach((ring) => {
+        ring.forEach(([x, y], i) => {
+          const px = x * resolution
+          const py = y * resolution
+          if (i === 0) context.moveTo(px, py)
+          else context.lineTo(px, py)
+        })
+      })
+    })
+    context.stroke()
+  })
 
-        for (let i = 1; i < ring.length; i += 1) {
-          context.lineTo(ring[i][0] * cell, ring[i][1] * cell)
-        }
-
-        context.stroke()
-      }
-    }
-  }
-
-  context.globalAlpha = 1
+  context.restore()
 
   return { width, height, terrainCanvas }
 }
 
-export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
+export const TopoBackground = ({ routePath = DEFAULT_ROUTE_PATH }: TopoBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const pathElementRef = useRef<SVGPathElement | null>(null)
   const snapshotRef = useRef<TerrainSnapshot | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !routePath) {
-      return
-    }
+    if (!canvas || !routePath) return
 
     const context = canvas.getContext('2d')
-    if (!context) {
-      return
-    }
+    if (!context) return
 
     const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path')
     pathElement.setAttribute('d', routePath)
     pathElementRef.current = pathElement
 
     const drawRoute = () => {
-      const snapshot = snapshotRef.current
-      const path = pathElementRef.current
-      if (!snapshot || !path) {
-        return
-      }
+      if (!snapshotRef.current || !pathElementRef.current) return
 
-      context.clearRect(0, 0, snapshot.width, snapshot.height)
-      context.drawImage(snapshot.terrainCanvas, 0, 0, snapshot.width, snapshot.height)
+      // Clear main canvas & draw cached terrain layer
+      context.clearRect(0, 0, canvas.width, canvas.height)
+      context.drawImage(snapshotRef.current.terrainCanvas, 0, 0)
 
-      const totalLength = path.getTotalLength()
-      drawAuxiliaryRouteLines(context, path, totalLength)
+      // Scale route to responsive viewport bounds (1000x600 viewBox)
+      const scaleX = window.innerWidth / 1000
+      const scaleY = window.innerHeight / 600
 
-      const steps = Math.max(50, Math.floor(totalLength / 8))
-
-      context.beginPath()
-      for (let i = 0; i <= steps; i += 1) {
-        const sampleLength = totalLength * (i / steps)
-        const point = path.getPointAtLength(sampleLength)
-        if (i === 0) {
-          context.moveTo(point.x, point.y)
-        } else {
-          context.lineTo(point.x, point.y)
-        }
-      }
-
-      context.strokeStyle = 'rgba(199, 255, 57, 0.88)'
-      context.lineWidth = 5
-      context.shadowColor = 'rgba(210, 255, 41, 0.95)'
-      context.shadowBlur = 24
-      context.lineCap = 'round'
-      context.lineJoin = 'round'
-      context.stroke()
-
-      context.strokeStyle = 'rgba(249, 255, 149, 0.9)'
-      context.lineWidth = 1.4
-      context.shadowBlur = 0
-      context.stroke()
-
-      context.shadowBlur = 0
+      context.save()
+      context.scale(scaleX, scaleY)
+      drawAuxiliaryRouteLines(context, pathElementRef.current)
+      context.restore()
     }
 
     const rebuild = () => {
@@ -200,7 +164,7 @@ export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
 
       context.setTransform(dpr, 0, 0, dpr, 0, 0)
 
-      snapshotRef.current = buildTerrain(width, height, dpr)
+      snapshotRef.current = buildTerrain(width, height)
       drawRoute()
     }
 
