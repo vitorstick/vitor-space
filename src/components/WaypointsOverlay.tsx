@@ -1,77 +1,60 @@
 import gsap from "gsap";
 import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { timeline } from "../data/timeline";
 import { WaypointCard } from "./WaypointCard";
 import type { TimelineItem } from "../models/TimelineItem";
 import { DialogDetail } from "./DialogDetail";
+import { useViewportSize } from "../lib/useViewportSize";
 
 type WaypointsOverlayProps = {
   routePath: string;
-};
-
-type WaypointPosition = {
-  id: string;
-  x: number;
-  y: number;
 };
 
 const clampToRange = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
 
 export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
-  const [positions, setPositions] = useState<WaypointPosition[]>([]);
+  const viewport = useViewportSize();
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [activeEntry, setActiveEntry] = useState<TimelineItem | null>(null);
 
-  useEffect(() => {
-    if (!routePath) {
-      setPositions([]);
-      return;
+  const positions = useMemo(() => {
+    if (!routePath || !viewport.width || !viewport.height) {
+      return []
     }
 
-    gsap.registerPlugin(MotionPathPlugin);
+    gsap.registerPlugin(MotionPathPlugin)
 
-    const computePositions = () => {
-      const rawPath = MotionPathPlugin.getRawPath(routePath);
+    const rawPath = MotionPathPlugin.getRawPath(routePath)
 
-      // Keep cards within viewport after translate(-50%, -50%).
-      const cardWidth = Math.min(352, window.innerWidth * 0.7);
-      const halfCardWidth = cardWidth / 2;
-      const minX = halfCardWidth + 16;
-      const maxX = window.innerWidth - halfCardWidth - 16;
-      const minY = 72;
-      const maxY = window.innerHeight - 92;
+    // Keep cards within viewport after translate(-50%, -50%).
+    const cardWidth = Math.min(352, viewport.width * 0.7)
+    const halfCardWidth = cardWidth / 2
+    const minX = halfCardWidth + 16
+    const maxX = viewport.width - halfCardWidth - 16
+    const minY = 72
+    const maxY = viewport.height - 92
 
-      const nextPositions = timeline.map((entry) => {
-        const point = MotionPathPlugin.getPositionOnPath(
-          rawPath,
-          entry.routeProgressPercentage,
-          true,
-        );
+    return timeline.map((entry) => {
+      const point = MotionPathPlugin.getPositionOnPath(
+        rawPath,
+        entry.routeProgressPercentage,
+        true,
+      )
 
-        return {
-          id: entry.id,
-          x: clampToRange(point.x, minX, maxX),
-          y: clampToRange(point.y, minY, maxY),
-        };
-      });
-
-      setPositions(nextPositions);
-    };
-
-    computePositions();
-    window.addEventListener("resize", computePositions);
-
-    return () => {
-      window.removeEventListener("resize", computePositions);
-    };
-  }, [routePath]);
+      return {
+        id: entry.id,
+        x: clampToRange(point.x, minX, maxX),
+        y: clampToRange(point.y, minY, maxY),
+      }
+    })
+  }, [routePath, viewport.height, viewport.width])
 
   const positionMap = useMemo(() => {
-    return new Map(positions.map((position) => [position.id, position]));
-  }, [positions]);
+    return new Map(positions.map((position) => [position.id, position]))
+  }, [positions])
 
   const openDialog = (entry: TimelineItem) => {
     setActiveEntry(entry);

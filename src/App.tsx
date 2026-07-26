@@ -2,23 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { TopoBackground } from './components/TopoBackground'
 import { WaypointsOverlay } from './components/WaypointsOverlay'
 import { createRoutePath } from './lib/route'
+import { useViewportSize } from './lib/useViewportSize'
+
 
 function App() {
-  const [viewport, setViewport] = useState({ width: 0, height: 0 })
+  const viewport = useViewportSize()
   const [scrollProgress, setScrollProgress] = useState(0)
-
-  useEffect(() => {
-    const updateViewport = () => {
-      setViewport({ width: window.innerWidth, height: window.innerHeight })
-    }
-
-    updateViewport()
-    window.addEventListener('resize', updateViewport)
-
-    return () => {
-      window.removeEventListener('resize', updateViewport)
-    }
-  }, [])
 
   useEffect(() => {
     const wheelSensitivity = 0.00005
