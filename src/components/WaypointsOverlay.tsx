@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { timeline } from "../data/timeline";
 import { WaypointCard } from "./WaypointCard";
 import type { TimelineItem } from "../models/TimelineItem";
+import { DialogDetail } from "./DialogDetail";
 
 type WaypointsOverlayProps = {
   routePath: string;
@@ -132,16 +133,8 @@ const closeDialog = () => {
       >
         {/* 3. Wrap inner content in a div with padding so clicks inside don't trigger the close */}
         <div className="h-full w-full p-8 overflow-y-auto relative">
-          <button className="absolute top-4 right-4" onClick={closeDialog}>
-            Close
-          </button>
-
           {activeEntry && (
-            <div>
-              <h2>{activeEntry.title}</h2>
-              <p>Date: {activeEntry.date}</p>
-              <p>Type: {activeEntry.type}</p>
-            </div>
+            <DialogDetail entry={activeEntry} onClose={closeDialog} />
           )}
         </div>
       </dialog>

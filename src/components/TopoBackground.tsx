@@ -196,6 +196,7 @@ export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProp
       drawScrollBullet(context, pathElementRef.current, scrollProgress)
       context.restore()
     }
+    
 
     const rebuild = () => {
       const width = window.innerWidth
