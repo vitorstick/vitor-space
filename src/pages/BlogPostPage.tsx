@@ -1,35 +1,83 @@
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Clock, MapPin, Tag, Terminal, Share2, Check } from 'lucide-react';
-import { useState } from 'react';
-import { posts } from '../data/posts';
-import { timeline } from '../data/timeline';
+import { ArrowLeft, Calendar, Clock, Tag, Share2, Check, ExternalLink, Heart, MessageSquare, AlertCircle, BookOpen } from 'lucide-react';
+import { getDevToArticleDetail, parseDevToTags } from '../lib/devto';
+import type { DevToArticleDetail } from '../models/DevToArticle';
 
 export const BlogPostPage = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
+  const [article, setArticle] = useState<DevToArticleDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const post = useMemo(() => {
-    return posts.find((p) => p.slug === slug);
-  }, [slug]);
+  useEffect(() => {
+    if (!id) {
+      setError('Article ID parameter missing.');
+      setLoading(false);
+      return;
+    }
 
-  const relatedWaypoint = useMemo(() => {
-    if (!post?.relatedWaypointId) return null;
-    return timeline.find((item) => item.id === post.relatedWaypointId) || null;
-  }, [post]);
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
 
-  if (!post) {
+    getDevToArticleDetail(id)
+      .then((data) => {
+        if (isMounted) {
+          setArticle(data);
+          setLoading(false);
+        }
+      })
+      .catch((err: Error) => {
+        if (isMounted) {
+          setError(err.message || `Failed to load article #${id}`);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  const handleShare = () => {
+    void navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#070906] text-slate-100 flex items-center justify-center p-6 pt-28">
+        <div className="rounded-xl border border-[#232f1e] bg-[#0a0d09]/90 p-12 text-center space-y-4 max-w-md w-full">
+          <div className="inline-flex items-center justify-center p-3 rounded-full bg-lime-950/40 border border-lime-500/30 text-lime-400 animate-spin">
+            <BookOpen size={28} />
+          </div>
+          <h2 className="text-sm font-mono text-lime-400 uppercase tracking-widest">
+            DECODING_DEV_TO_LOG...
+          </h2>
+          <p className="text-xs font-mono text-slate-400">Fetching article #{id} from Dev.to API</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !article) {
     return (
       <div className="min-h-screen bg-[#070906] text-slate-100 flex items-center justify-center p-6 pt-28">
         <div className="max-w-md w-full rounded-xl border border-red-900/50 bg-[#0a0d09]/90 p-8 text-center space-y-4">
-          <Terminal size={32} className="mx-auto text-red-400" />
-          <h1 className="text-xl font-bold font-mono text-red-400">404 // LOG_NOT_FOUND</h1>
+          <AlertCircle size={32} className="mx-auto text-red-400" />
+          <h1 className="text-xl font-bold font-mono text-red-400">404 // ARTICLE_NOT_FOUND</h1>
           <p className="text-xs font-mono text-slate-400">
-            The requested technical article slug does not exist in telemetry logs.
+            {error || `The article ID #${id} could not be retrieved from Dev.to.`}
           </p>
           <button
-            onClick={() => { void navigate('/blog'); }}
+            onClick={() => {
+              void navigate('/blog');
+            }}
             className="inline-flex items-center gap-2 px-4 py-2 bg-lime-400 text-black text-xs font-mono font-semibold rounded hover:bg-lime-300 transition-colors"
           >
             <ArrowLeft size={14} />
@@ -40,11 +88,7 @@ export const BlogPostPage = () => {
     );
   }
 
-  const handleShare = () => {
-    void navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const tags = parseDevToTags(article.tag_list || article.tags);
 
   return (
     <div className="min-h-screen bg-[#070906] text-slate-100 pt-28 pb-20 px-4 md:px-8">
@@ -59,142 +103,131 @@ export const BlogPostPage = () => {
             <span>BACK TO ARTICLES</span>
           </Link>
 
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono border border-[#232f1e] bg-black/60 text-slate-300 hover:border-lime-400 hover:text-lime-300 transition-all"
-          >
-            {copied ? (
-              <>
-                <Check size={13} className="text-lime-400" />
-                <span className="text-lime-400">COPIED LINK</span>
-              </>
-            ) : (
-              <>
-                <Share2 size={13} />
-                <span>SHARE</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <a
+              href={article.canonical_url || article.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono border border-[#232f1e] bg-black/60 text-slate-300 hover:border-lime-400 hover:text-lime-300 transition-all"
+            >
+              <span>VIEW ON DEV.TO</span>
+              <ExternalLink size={12} />
+            </a>
+
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono border border-[#232f1e] bg-black/60 text-slate-300 hover:border-lime-400 hover:text-lime-300 transition-all"
+            >
+              {copied ? (
+                <>
+                  <Check size={13} className="text-lime-400" />
+                  <span className="text-lime-400">COPIED</span>
+                </>
+              ) : (
+                <>
+                  <Share2 size={13} />
+                  <span>SHARE</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Cover Image Banner */}
+        {article.cover_image && (
+          <div className="overflow-hidden rounded-2xl border border-[#232f1e] bg-black shadow-2xl max-h-96">
+            <img
+              src={article.cover_image}
+              alt={article.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
 
         {/* Header Metadata */}
         <header className="space-y-4 border-b border-[#232f1e] pb-8">
-          <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-slate-400">
-            <span className="px-2.5 py-1 rounded bg-lime-400/10 border border-lime-500/30 text-lime-400 font-semibold uppercase">
-              {post.category || 'ARTICLE'}
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar size={13} />
-              {post.published_timestamp ? post.published_timestamp.split('T')[0] : ''}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock size={13} />
-              {post.reading_time_minutes} min read
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-slate-400">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1 text-lime-400 font-semibold">
+                <Calendar size={13} />
+                {article.readable_publish_date}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock size={13} />
+                {article.reading_time_minutes} min read
+              </span>
+            </div>
+
+            <div className="flex items-center gap-4 text-slate-400">
+              <span className="flex items-center gap-1">
+                <Heart size={13} className="text-rose-400" />
+                {article.public_reactions_count} reactions
+              </span>
+              <span className="flex items-center gap-1">
+                <MessageSquare size={13} className="text-sky-400" />
+                {article.comments_count} comments
+              </span>
+            </div>
           </div>
 
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            {post.title}
+            {article.title}
           </h1>
 
           <p className="text-base font-mono text-slate-300/90 leading-relaxed">
-            {post.description}
+            {article.description}
           </p>
 
           {/* Tags */}
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            {post.tag_list.map((tag) => (
+            {tags.map((tag) => (
               <span
                 key={tag}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono text-slate-400 bg-[#0d120c] border border-[#222c1e]"
               >
                 <Tag size={12} className="text-lime-400/70" />
-                {tag}
+                #{tag}
               </span>
             ))}
           </div>
         </header>
 
-        {/* Related Waypoint Banner */}
-        {relatedWaypoint && (
-          <div className="flex items-center justify-between rounded-xl border border-lime-500/30 bg-lime-950/20 p-4">
-            <div className="flex items-center gap-3">
-              <MapPin className="text-lime-400 shrink-0" size={20} />
-              <div>
-                <span className="text-[10px] font-mono text-lime-400 uppercase tracking-widest block">
-                  RELATED CAREER WAYPOINT
-                </span>
-                <span className="text-sm font-semibold text-white font-mono">
-                  {relatedWaypoint.title} ({relatedWaypoint.date})
-                </span>
-              </div>
-            </div>
-            <Link
-              to={`/waypoint/${relatedWaypoint.id}`}
-              className="shrink-0 px-3 py-1.5 text-xs font-mono font-semibold text-black bg-lime-400 hover:bg-lime-300 rounded transition-colors"
-            >
-              VIEW ON TIMELINE
-            </Link>
-          </div>
-        )}
-
-        {/* Main Post Body */}
-        <div className="prose prose-invert max-w-none space-y-6 text-slate-200 text-sm md:text-base font-sans leading-relaxed">
-          {post.body_markdown
-            .trim()
-            .split('\n\n')
-            .map((block, idx) => {
-              const blockKey = `block-${block.substring(0, 15)}-${idx}`;
-              if (block.startsWith('## ')) {
-                return (
-                  <h2 key={blockKey} className="text-xl md:text-2xl font-bold font-mono text-lime-300 mt-8 mb-4 border-b border-[#232f1e] pb-2">
-                    {block.replace('## ', '')}
-                  </h2>
-                );
-              }
-              if (block.startsWith('### ')) {
-                return (
-                  <h3 key={blockKey} className="text-lg font-bold font-mono text-white mt-6 mb-2">
-                    {block.replace('### ', '')}
-                  </h3>
-                );
-              }
-              if (block.startsWith('```')) {
-                const codeContent = block.replace(/```[a-z]*/, '').replace(/```$/, '').trim();
-                return (
-                  <pre key={blockKey} className="p-4 rounded-xl bg-[#030503] border border-[#232f1e] overflow-x-auto font-mono text-xs text-lime-400/90 my-4">
-                    <code>{codeContent}</code>
-                  </pre>
-                );
-              }
-              if (block.startsWith('- ')) {
-                const listItems = block.split('\n').map((item) => item.replace('- ', ''));
-                return (
-                  <ul key={blockKey} className="list-disc list-inside space-y-1.5 text-slate-300 font-mono text-xs md:text-sm pl-2">
-                    {listItems.map((item) => (
-                      <li key={`item-${item.substring(0, 15)}`}>{item}</li>
-                    ))}
-                  </ul>
-                );
-              }
-              return <p key={blockKey}>{block}</p>;
-            })}
-        </div>
+        {/* Article Body HTML */}
+        <div
+          className="prose prose-invert max-w-none space-y-6 text-slate-200 text-sm md:text-base font-sans leading-relaxed devto-body-content"
+          dangerouslySetInnerHTML={{ __html: article.body_html }}
+        />
 
         {/* Author Footer */}
-        <footer className="mt-12 pt-8 border-t border-[#232f1e] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#0a0d09]/90 p-6 rounded-xl border">
-          <div className="space-y-1">
-            <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">AUTHOR</span>
-            <h4 className="text-base font-bold text-white font-mono">{post.author?.name || 'Vitor Rodrigues'}</h4>
-            <p className="text-xs font-mono text-lime-400">{post.author?.role || 'Staff Frontend Engineer'}</p>
+        <footer className="mt-12 pt-8 border-t border-[#232f1e] flex flex-col md:flex-row items-center justify-between gap-6 bg-[#0a0d09]/90 p-6 rounded-xl border">
+          <div className="flex items-center gap-4">
+            {article.user?.profile_image && (
+              <img
+                src={article.user.profile_image}
+                alt={article.user.name}
+                className="w-12 h-12 rounded-full border border-lime-400/50"
+              />
+            )}
+            <div className="space-y-0.5">
+              <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">
+                AUTHOR
+              </span>
+              <h4 className="text-base font-bold text-white font-mono">{article.user?.name}</h4>
+              <p className="text-xs font-mono text-lime-400">@{article.user?.username}</p>
+            </div>
           </div>
 
-          <Link
-            to="/blog"
-            className="px-4 py-2 text-xs font-mono bg-black/60 border border-[#232f1e] text-slate-300 hover:border-lime-400 hover:text-white rounded transition-colors"
-          >
-            EXPLORE ALL ARTICLES
-          </Link>
+          <div className="flex items-center gap-3">
+            <a
+              href={`https://dev.to/${article.user?.username}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 px-4 py-2 text-xs font-mono bg-lime-400 text-black font-semibold rounded hover:bg-lime-300 transition-colors"
+            >
+              <span>FOLLOW ON DEV.TO</span>
+              <ExternalLink size={13} />
+            </a>
+          </div>
         </footer>
       </article>
     </div>

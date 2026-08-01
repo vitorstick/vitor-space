@@ -94,3 +94,86 @@ body::before {
   from { opacity: 1; }
   to { opacity: 0; }
 }
+
+/* Dev.to HTML Article Content Styling */
+.devto-body-content h1,
+.devto-body-content h2,
+.devto-body-content h3,
+.devto-body-content h4 {
+  font-family: 'IBM Plex Mono', monospace;
+  color: #a3e635;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
+.devto-body-content h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid #232f1e;
+  padding-bottom: 0.5rem;
+}
+
+.devto-body-content h3 {
+  font-size: 1.25rem;
+  color: #ffffff;
+}
+
+.devto-body-content p {
+  margin-bottom: 1.25rem;
+  line-height: 1.7;
+}
+
+.devto-body-content a {
+  color: #a3e635;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.devto-body-content a:hover {
+  color: #bef264;
+}
+
+.devto-body-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 1px solid #232f1e;
+  margin: 1.5rem 0;
+}
+
+.devto-body-content pre,
+.devto-body-content .highlight {
+  background-color: #030503;
+  border: 1px solid #232f1e;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.85rem;
+  color: #a3e635;
+  margin: 1.5rem 0;
+}
+
+.devto-body-content code {
+  font-family: 'IBM Plex Mono', monospace;
+  background-color: rgba(163, 230, 53, 0.1);
+  color: #a3e635;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.85em;
+}
+
+.devto-body-content pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.devto-body-content ul,
+.devto-body-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.devto-body-content li {
+  margin-bottom: 0.5rem;
+}
