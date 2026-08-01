@@ -28,7 +28,7 @@ export const MobileTimelineView = ({
   );
 
   return (
-    <div className="w-full pt-44 pb-24 px-4 flex flex-col gap-6 max-w-lg mx-auto z-10 relative">
+    <div className="w-full pt-32 md:pt-36 pb-24 px-4 flex flex-col gap-6 max-w-lg mx-auto z-10 relative">
       <div className="text-center font-mono text-[10px] uppercase tracking-[0.25em] text-lime-400/80 mb-2">
         // VERTICAL_ROUTE_STREAM (MOBILE_VIEW)
       </div>

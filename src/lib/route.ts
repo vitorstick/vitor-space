@@ -3,7 +3,7 @@ const clamp = (value: number, min: number, max: number) =>
 
 export const createRoutePath = (width: number, height: number) => {
   const horizontalPadding = Math.max(120, width * 0.08)
-  const topPadding = Math.max(80, height * 0.10)
+  const topPadding = Math.max(130, height * 0.14)
   const bottomPadding = Math.max(90, height * 0.12)
 
   const minX = horizontalPadding

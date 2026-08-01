@@ -92,7 +92,7 @@ export const BlogPostPage = () => {
   const tags = parseDevToTags(article.tag_list || article.tags);
 
   return (
-    <div className="min-h-screen bg-[#070906] text-slate-100 pt-28 pb-20 px-4 md:px-8">
+    <div className="min-h-screen bg-[#070906] text-slate-100 pt-24 md:pt-28 pb-20 px-4 md:px-8">
       <article className="mx-auto max-w-4xl space-y-8">
         {/* Navigation Bar */}
         <div className="flex items-center justify-between">

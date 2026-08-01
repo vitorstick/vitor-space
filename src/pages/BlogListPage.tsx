@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Calendar, Clock, Search, Tag, Terminal, ExternalLink, Heart, MessageSquare, AlertCircle } from 'lucide-react';
+import { BookOpen, Calendar, Clock, Tag, Terminal, ExternalLink, Heart, MessageSquare, AlertCircle } from 'lucide-react';
 import { getDevToArticles, parseDevToTags } from '../lib/devto';
 import type { DevToArticleListItem } from '../models/DevToArticle';
 
@@ -8,9 +8,6 @@ export const BlogListPage = () => {
   const [articles, setArticles] = useState<DevToArticleListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string>('all');
 
   useEffect(() => {
     let isMounted = true;
@@ -36,31 +33,8 @@ export const BlogListPage = () => {
     };
   }, []);
 
-  const allTags = useMemo(() => {
-    const set = new Set<string>();
-    articles.forEach((art) => {
-      const tags = parseDevToTags(art.tag_list || art.tags);
-      tags.forEach((t) => set.add(t));
-    });
-    return Array.from(set);
-  }, [articles]);
-
-  const filteredArticles = useMemo(() => {
-    return articles.filter((art) => {
-      const tags = parseDevToTags(art.tag_list || art.tags);
-      const matchesTag = selectedTag === 'all' || tags.includes(selectedTag);
-
-      const matchesSearch =
-        art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        art.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase()));
-
-      return matchesTag && matchesSearch;
-    });
-  }, [articles, searchQuery, selectedTag]);
-
   return (
-    <div className="min-h-screen bg-[#070906] text-slate-100 pt-28 pb-20 px-4 md:px-8">
+    <div className="min-h-screen bg-[#070906] text-slate-100 pt-24 md:pt-28 pb-20 px-4 md:px-8">
       <div className="mx-auto max-w-6xl space-y-8">
         {/* Header Title Section */}
         <div className="flex flex-col gap-3 border-b border-[#232f1e] pb-8">
@@ -90,47 +64,6 @@ export const BlogListPage = () => {
           </p>
         </div>
 
-        {/* Filters & Search Bar */}
-        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-[#0d120c]/90 p-4 rounded-xl border border-[#232f1e]">
-          {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search Dev.to articles by keyword or tag..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#070906] border border-[#232f1e] rounded-lg pl-10 pr-4 py-2 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-lime-400/80 transition-all"
-            />
-          </div>
-
-          {/* Tag Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={() => setSelectedTag('all')}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${selectedTag === 'all'
-                  ? 'bg-lime-400 text-black font-semibold shadow-[0_0_12px_rgba(163,230,53,0.3)]'
-                  : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-white'
-                }`}
-            >
-              ALL ({articles.length})
-            </button>
-
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => setSelectedTag(tag)}
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono uppercase transition-all cursor-pointer ${selectedTag === tag
-                    ? 'bg-lime-400 text-black font-semibold shadow-[0_0_12px_rgba(163,230,53,0.3)]'
-                    : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-white'
-                  }`}
-              >
-                #{tag}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Loading State */}
         {loading && (
           <div className="rounded-xl border border-[#232f1e] bg-[#0a0d09]/80 p-12 text-center space-y-4">
@@ -153,9 +86,9 @@ export const BlogListPage = () => {
         )}
 
         {/* Article Cards Grid */}
-        {!loading && !error && filteredArticles.length > 0 && (
+        {!loading && !error && articles.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredArticles.map((article) => {
+            {articles.map((article) => {
               const tags = parseDevToTags(article.tag_list || article.tags);
               const coverImg = article.cover_image || article.social_image;
 
@@ -246,21 +179,12 @@ export const BlogListPage = () => {
           </div>
         )}
 
-        {/* Empty Search Result */}
-        {!loading && !error && filteredArticles.length === 0 && (
+        {/* Empty Result */}
+        {!loading && !error && articles.length === 0 && (
           <div className="rounded-xl border border-[#232f1e] bg-[#0a0d09]/80 p-12 text-center space-y-4">
             <p className="font-mono text-slate-400 text-sm">
-              NO DEV.TO ARTICLES MATCHED FILTER: "{searchQuery || selectedTag}"
+              NO DEV.TO ARTICLES FOUND FOR @VITORSTICK
             </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedTag('all');
-              }}
-              className="px-4 py-2 text-xs font-mono bg-lime-400 text-black font-semibold rounded hover:bg-lime-300 transition-colors"
-            >
-              RESET FILTERS
-            </button>
           </div>
         )}
       </div>
