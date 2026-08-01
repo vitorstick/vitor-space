@@ -1,26 +1,44 @@
 import { useEffect, useMemo, useState } from 'react'
+import gsap from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { TopoBackground } from './components/TopoBackground'
 import { WaypointsOverlay } from './components/WaypointsOverlay'
 import { createRoutePath } from './lib/route'
 import { useViewportSize } from './lib/useViewportSize'
 
+gsap.registerPlugin(ScrollTrigger)
 
 function App() {
   const viewport = useViewportSize()
   const [scrollProgress, setScrollProgress] = useState(0)
 
   useEffect(() => {
-    const wheelSensitivity = 0.00005
-
-    const handleWheel = (event: WheelEvent) => {
-      setScrollProgress((previous) => {
-        const next = previous + event.deltaY * wheelSensitivity
-        return Math.min(1, Math.max(0, next))
-      })
+    // Native scroll calculation fallback and initial alignment
+    const updateScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight
+      if (totalScroll > 0) {
+        const progress = Math.min(1, Math.max(0, window.scrollY / totalScroll))
+        setScrollProgress(progress)
+      }
     }
 
-    window.addEventListener('wheel', handleWheel, { passive: true })
-    return () => window.removeEventListener('wheel', handleWheel)
+    // Initialize GSAP ScrollTrigger scrub
+    const trigger = ScrollTrigger.create({
+      start: 'top top',
+      end: 'bottom bottom',
+      scrub: 0.1,
+      onUpdate: (self) => {
+        setScrollProgress(self.progress)
+      },
+    })
+
+    window.addEventListener('scroll', updateScroll, { passive: true })
+    requestAnimationFrame(updateScroll)
+
+    return () => {
+      trigger.kill()
+      window.removeEventListener('scroll', updateScroll)
+    }
   }, [])
 
   const routePath = useMemo(() => {
@@ -32,24 +50,9 @@ function App() {
   }, [viewport.height, viewport.width])
 
   return (
-    <main className="relative min-h-screen overflow-x-clip text-slate-100">
+    <main className="relative min-h-[400vh] text-slate-100">
       {routePath ? <TopoBackground routePath={routePath} scrollProgress={scrollProgress} /> : null}
-      {routePath ? <WaypointsOverlay routePath={routePath} /> : null}
-
-      {/* <section className="pointer-events-none absolute inset-x-0 top-0 z-20 px-6 pt-7 md:pt-10">
-        <div className="mx-auto max-w-6xl">
-          <p className="font-mono text-[10px] uppercase tracking-[0.35em] text-lime-200/80 md:text-xs">
-            Index / Projects / Journey
-          </p>
-          <h1 className="mt-3 max-w-2xl text-balance text-2xl font-semibold leading-[1.1] text-lime-50 md:text-5xl">
-            A Topographical Map of Product Milestones
-          </h1>
-          <p className="mt-3 max-w-xl text-pretty font-mono text-xs text-slate-200/85 md:text-sm">
-            The complete route is rendered at load. Waypoints are pinned to exact
-            path coordinates to form a technical journey map.
-          </p>
-        </div>
-      </section> */}
+      {routePath ? <WaypointsOverlay routePath={routePath} scrollProgress={scrollProgress} /> : null}
     </main>
   )
 }

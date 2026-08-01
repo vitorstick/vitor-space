@@ -22,12 +22,50 @@ const drawAuxiliaryRouteLines = (
 
   const path2d = new Path2D(pathD)
 
-  // Layered glowing lines to achieve the neon effect
+  context.save()
+  context.strokeStyle = 'rgba(140, 165, 120, 0.22)'
+  context.lineWidth = 1.5
+  context.lineCap = 'round'
+  context.lineJoin = 'round'
+  context.setLineDash([4, 6])
+  context.stroke(path2d)
+  context.restore()
+}
+
+const drawActiveRouteLine = (
+  context: CanvasRenderingContext2D,
+  path: SVGPathElement,
+  progress: number
+) => {
+  if (progress <= 0) return
+
+  const totalLength = path.getTotalLength()
+  const activeLength = totalLength * progress
+  const step = 4
+
+  context.save()
+  context.beginPath()
+  let first = true
+  for (let l = 0; l <= activeLength; l += step) {
+    const pt = path.getPointAtLength(l)
+    if (first) {
+      context.moveTo(pt.x, pt.y)
+      first = false
+    } else {
+      context.lineTo(pt.x, pt.y)
+    }
+  }
+
+  const endPt = path.getPointAtLength(activeLength)
+  if (endPt) {
+    context.lineTo(endPt.x, endPt.y)
+  }
+
   const lineConfigs = [
-    { strokeStyle: 'rgba(202, 250, 92, 0.12)', lineWidth: 24, blur: 20 },
-    { strokeStyle: 'rgba(202, 250, 92, 0.35)', lineWidth: 10, blur: 10 },
-    { strokeStyle: '#d9f99d', lineWidth: 4, blur: 4 },
-    { strokeStyle: '#ffffff', lineWidth: 1.5, blur: 0 }
+    { strokeStyle: 'rgba(202, 250, 92, 0.25)', lineWidth: 16, blur: 16 },
+    { strokeStyle: 'rgba(202, 250, 92, 0.6)', lineWidth: 6, blur: 8 },
+    { strokeStyle: '#caef5c', lineWidth: 2.5, blur: 2 },
+    { strokeStyle: '#ffffff', lineWidth: 1.2, blur: 0 }
   ]
 
   for (const config of lineConfigs) {
@@ -36,15 +74,15 @@ const drawAuxiliaryRouteLines = (
     context.lineWidth = config.lineWidth
     context.lineCap = 'round'
     context.lineJoin = 'round'
-
     if (config.blur > 0) {
       context.shadowColor = '#caef5c'
       context.shadowBlur = config.blur
     }
-
-    context.stroke(path2d)
+    context.stroke()
     context.restore()
   }
+
+  context.restore()
 }
 
 const drawScrollBullet = (
@@ -184,6 +222,7 @@ export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProp
 
       context.save()
       drawAuxiliaryRouteLines(context, pathElementRef.current)
+      drawActiveRouteLine(context, pathElementRef.current, scrollProgress)
       drawScrollBullet(context, pathElementRef.current, scrollProgress)
       context.restore()
     }

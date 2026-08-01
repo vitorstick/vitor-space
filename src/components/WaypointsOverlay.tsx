@@ -7,11 +7,12 @@ import { useViewportSize } from "../lib/useViewportSize";
 
 type WaypointsOverlayProps = {
   routePath: string;
+  scrollProgress?: number;
 };
 
 
 
-export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
+export const WaypointsOverlay = ({ routePath, scrollProgress = 0 }: WaypointsOverlayProps) => {
   const viewport = useViewportSize();
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -46,7 +47,7 @@ export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
     dialogRef.current?.showModal();
   };
 
-const closeDialog = () => {
+  const closeDialog = () => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     
@@ -73,6 +74,8 @@ const closeDialog = () => {
             return null;
           }
 
+          const isReached = scrollProgress >= entry.routeProgressPercentage;
+
           return (
             <div
               key={entry.id}
@@ -86,6 +89,7 @@ const closeDialog = () => {
                 title={entry.title}
                 top={`${position.y}px`}
                 left={`${position.x}px`}
+                isReached={isReached}
               />
             </div>
           );
