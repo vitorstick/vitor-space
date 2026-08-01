@@ -1,69 +1,28 @@
-import { useEffect, useMemo, useState } from 'react'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { HeaderHUD } from './components/HeaderHUD'
-import { TopoBackground } from './components/TopoBackground'
-import { WaypointsOverlay } from './components/WaypointsOverlay'
-import { timeline } from './data/timeline'
-import { createRoutePath } from './lib/route'
-import { useViewportSize } from './lib/useViewportSize'
-import type { TimelineType } from './models/TimelineItem'
-
-gsap.registerPlugin(ScrollTrigger)
+import { useMemo, useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { HeaderHUD } from './components/HeaderHUD';
+import { TimelinePage } from './pages/TimelinePage';
+import { BlogListPage } from './pages/BlogListPage';
+import { BlogPostPage } from './pages/BlogPostPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { timeline } from './data/timeline';
+import type { TimelineType } from './models/TimelineItem';
 
 function App() {
-  const viewport = useViewportSize()
-  const [scrollProgress, setScrollProgress] = useState(0)
-  const [activeFilter, setActiveFilter] = useState<'all' | TimelineType>('all')
-
-  useEffect(() => {
-    // Native scroll calculation fallback and initial alignment
-    const updateScroll = () => {
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight
-      if (totalScroll > 0) {
-        const progress = Math.min(1, Math.max(0, window.scrollY / totalScroll))
-        setScrollProgress(progress)
-      }
-    }
-
-    // Initialize GSAP ScrollTrigger scrub
-    const trigger = ScrollTrigger.create({
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 0.1,
-      onUpdate: (self) => {
-        setScrollProgress(self.progress)
-      },
-    })
-
-    window.addEventListener('scroll', updateScroll, { passive: true })
-    requestAnimationFrame(updateScroll)
-
-    return () => {
-      trigger.kill()
-      window.removeEventListener('scroll', updateScroll)
-    }
-  }, [])
-
-  const routePath = useMemo(() => {
-    if (!viewport.width || !viewport.height) {
-      return ''
-    }
-
-    return createRoutePath(viewport.width, viewport.height)
-  }, [viewport.height, viewport.width])
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<'all' | TimelineType>('all');
 
   const filteredTimeline = useMemo(() => {
-    if (activeFilter === 'all') return timeline
-    return timeline.filter((item) => item.type === activeFilter)
-  }, [activeFilter])
+    if (activeFilter === 'all') return timeline;
+    return timeline.filter((item) => item.type === activeFilter);
+  }, [activeFilter]);
 
   const reachedItemsCount = useMemo(() => {
-    return filteredTimeline.filter((item) => scrollProgress >= item.routeProgressPercentage).length
-  }, [filteredTimeline, scrollProgress])
+    return filteredTimeline.filter((item) => scrollProgress >= item.routeProgressPercentage).length;
+  }, [filteredTimeline, scrollProgress]);
 
   return (
-    <main className="relative min-h-[400vh] text-slate-100">
+    <>
       <HeaderHUD
         scrollProgress={scrollProgress}
         activeFilter={activeFilter}
@@ -71,16 +30,36 @@ function App() {
         totalItems={filteredTimeline.length}
         reachedItems={reachedItemsCount}
       />
-      {routePath ? <TopoBackground routePath={routePath} scrollProgress={scrollProgress} /> : null}
-      {routePath ? (
-        <WaypointsOverlay
-          routePath={routePath}
-          scrollProgress={scrollProgress}
-          activeFilter={activeFilter}
+
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <TimelinePage
+              scrollProgress={scrollProgress}
+              setScrollProgress={setScrollProgress}
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+            />
+          }
         />
-      ) : null}
-    </main>
-  )
+        <Route
+          path="/waypoint/:waypointId"
+          element={
+            <TimelinePage
+              scrollProgress={scrollProgress}
+              setScrollProgress={setScrollProgress}
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+            />
+          }
+        />
+        <Route path="/blog" element={<BlogListPage />} />
+        <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </>
+  );
 }
 
-export default App
+export default App;
