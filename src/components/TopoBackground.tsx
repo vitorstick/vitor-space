@@ -1,4 +1,3 @@
-import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { contours } from 'd3-contour'
 import { createNoise2D } from 'simplex-noise'
 import { useEffect, useRef } from 'react'
@@ -53,11 +52,8 @@ const drawScrollBullet = (
   path: SVGPathElement,
   progress: number
 ) => {
-  const pathD = path.getAttribute('d')
-  if (!pathD) return
-
-  const rawPath = MotionPathPlugin.getRawPath(pathD)
-  const point = MotionPathPlugin.getPositionOnPath(rawPath, progress, true)
+  const totalLength = path.getTotalLength()
+  const point = path.getPointAtLength(progress * totalLength)
 
   if (!point) return
 
@@ -186,12 +182,7 @@ export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProp
       context.clearRect(0, 0, canvas.width, canvas.height)
       context.drawImage(snapshotRef.current.terrainCanvas, 0, 0)
 
-      // Scale route to match fixed canvas size (1380x660)
-      const scaleX = window.innerWidth / 1380
-      const scaleY = window.innerHeight / 660
-
       context.save()
-      context.scale(scaleX, scaleY)
       drawAuxiliaryRouteLines(context, pathElementRef.current)
       drawScrollBullet(context, pathElementRef.current, scrollProgress)
       context.restore()

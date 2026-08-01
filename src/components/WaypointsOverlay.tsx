@@ -1,5 +1,3 @@
-import gsap from "gsap";
-import { MotionPathPlugin } from "gsap/MotionPathPlugin";
 import { useMemo, useRef, useState } from "react";
 import { timeline } from "../data/timeline";
 import { WaypointCard } from "./WaypointCard";
@@ -11,8 +9,7 @@ type WaypointsOverlayProps = {
   routePath: string;
 };
 
-const clampToRange = (value: number, min: number, max: number) =>
-  Math.min(max, Math.max(min, value));
+
 
 export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
   const viewport = useViewportSize();
@@ -25,29 +22,17 @@ export const WaypointsOverlay = ({ routePath }: WaypointsOverlayProps) => {
       return []
     }
 
-    gsap.registerPlugin(MotionPathPlugin)
-
-    const rawPath = MotionPathPlugin.getRawPath(routePath)
-
-    // Keep cards within viewport after translate(-50%, -50%).
-    const cardWidth = Math.min(352, viewport.width * 0.7)
-    const halfCardWidth = cardWidth / 2
-    const minX = halfCardWidth + 16
-    const maxX = viewport.width - halfCardWidth - 16
-    const minY = 72
-    const maxY = viewport.height - 92
+    const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    pathEl.setAttribute('d', routePath)
+    const totalLength = pathEl.getTotalLength()
 
     return timeline.map((entry) => {
-      const point = MotionPathPlugin.getPositionOnPath(
-        rawPath,
-        entry.routeProgressPercentage,
-        true,
-      )
+      const point = pathEl.getPointAtLength(entry.routeProgressPercentage * totalLength)
 
       return {
         id: entry.id,
-        x: clampToRange(point.x, minX, maxX),
-        y: clampToRange(point.y, minY, maxY),
+        x: point.x,
+        y: point.y,
       }
     })
   }, [routePath, viewport.height, viewport.width])

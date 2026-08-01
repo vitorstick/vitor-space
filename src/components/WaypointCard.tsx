@@ -31,7 +31,7 @@ export const WaypointCard: React.FC<WaypointCardProps> = ({
   return (
     <div 
       className="absolute flex items-center gap-2 p-2 bg-[#1A1A1A] border border-[#333] rounded-md shadow-2xl backdrop-blur-sm bg-opacity-90 transition-transform hover:scale-105 hover:border-lime-400 cursor-pointer group z-10"
-      style={{ top, left, transform: 'translate(-50%, -50%)' }} // Centers the card on the exact coordinate
+      style={{ top, left, transform: 'translate(-50%, calc(-100% - 16px))' }} // Pin dot rests precisely on path coordinate
     >
       {/* Icon Container with subtle neon glow on hover */}
       <div className="flex items-center justify-center w-10 h-10 bg-black border border-[#333] rounded group-hover:shadow-[0_0_10px_rgba(163,230,53,0.3)] transition-all">
