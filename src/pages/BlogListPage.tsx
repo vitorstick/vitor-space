@@ -108,11 +108,10 @@ export const BlogListPage = () => {
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               onClick={() => setSelectedTag('all')}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
-                selectedTag === 'all'
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${selectedTag === 'all'
                   ? 'bg-lime-400 text-black font-semibold shadow-[0_0_12px_rgba(163,230,53,0.3)]'
                   : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-white'
-              }`}
+                }`}
             >
               ALL ({articles.length})
             </button>
@@ -121,11 +120,10 @@ export const BlogListPage = () => {
               <button
                 key={tag}
                 onClick={() => setSelectedTag(tag)}
-                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono uppercase transition-all cursor-pointer ${
-                  selectedTag === tag
+                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-mono uppercase transition-all cursor-pointer ${selectedTag === tag
                     ? 'bg-lime-400 text-black font-semibold shadow-[0_0_12px_rgba(163,230,53,0.3)]'
                     : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-white'
-                }`}
+                  }`}
               >
                 #{tag}
               </button>
@@ -168,7 +166,7 @@ export const BlogListPage = () => {
                 >
                   {/* Cover Image Banner */}
                   {coverImg && (
-                    <div className="h-44 w-full overflow-hidden border-b border-[#1f2a1a] bg-black">
+                    <div className="h-54 w-full overflow-hidden border-b border-[#1f2a1a] bg-black">
                       <img
                         src={coverImg}
                         alt={article.title}

@@ -5,7 +5,8 @@ import { getDevToArticleDetail, parseDevToTags } from '../lib/devto';
 import type { DevToArticleDetail } from '../models/DevToArticle';
 
 export const BlogPostPage = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, slug } = useParams<{ id?: string; slug?: string }>();
+  const articleId = id || slug;
   const navigate = useNavigate();
 
   const [article, setArticle] = useState<DevToArticleDetail | null>(null);
@@ -14,7 +15,7 @@ export const BlogPostPage = () => {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!id) {
+    if (!articleId) {
       setError('Article ID parameter missing.');
       setLoading(false);
       return;
@@ -24,7 +25,7 @@ export const BlogPostPage = () => {
     setLoading(true);
     setError(null);
 
-    getDevToArticleDetail(id)
+    getDevToArticleDetail(articleId)
       .then((data) => {
         if (isMounted) {
           setArticle(data);
@@ -33,7 +34,7 @@ export const BlogPostPage = () => {
       })
       .catch((err: Error) => {
         if (isMounted) {
-          setError(err.message || `Failed to load article #${id}`);
+          setError(err.message || `Failed to load article #${articleId}`);
           setLoading(false);
         }
       });
@@ -41,7 +42,7 @@ export const BlogPostPage = () => {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [articleId]);
 
   const handleShare = () => {
     void navigator.clipboard.writeText(window.location.href);
@@ -59,7 +60,7 @@ export const BlogPostPage = () => {
           <h2 className="text-sm font-mono text-lime-400 uppercase tracking-widest">
             DECODING_DEV_TO_LOG...
           </h2>
-          <p className="text-xs font-mono text-slate-400">Fetching article #{id} from Dev.to API</p>
+          <p className="text-xs font-mono text-slate-400">Fetching article #{articleId} from Dev.to API</p>
         </div>
       </div>
     );
@@ -72,7 +73,7 @@ export const BlogPostPage = () => {
           <AlertCircle size={32} className="mx-auto text-red-400" />
           <h1 className="text-xl font-bold font-mono text-red-400">404 // ARTICLE_NOT_FOUND</h1>
           <p className="text-xs font-mono text-slate-400">
-            {error || `The article ID #${id} could not be retrieved from Dev.to.`}
+            {error || `The article ID #${articleId} could not be retrieved from Dev.to.`}
           </p>
           <button
             onClick={() => {
