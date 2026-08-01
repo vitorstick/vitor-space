@@ -32,24 +32,24 @@ export const WaypointCard: React.FC<WaypointCardProps> = ({
 
   return (
     <div 
-      className={`absolute flex items-center gap-2 p-2 bg-[#1A1A1A]/95 border rounded-md shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-lime-400 cursor-pointer group z-10 ${
+      className={`absolute flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 bg-[#1A1A1A]/95 border rounded-md shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-lime-400 cursor-pointer group z-10 ${
         isReached ? 'border-lime-400/90 shadow-[0_0_15px_rgba(163,230,53,0.25)]' : 'border-[#333]'
       }`}
       style={{ top, left, transform: 'translate(-50%, calc(-100% - 16px))' }} // Pin dot rests precisely on path coordinate
     >
       {/* Icon Container with subtle neon glow on hover or reached state */}
-      <div className={`flex items-center justify-center w-10 h-10 bg-black border rounded transition-all ${
+      <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 bg-black border rounded transition-all shrink-0 ${
         isReached ? 'border-lime-400/80 shadow-[0_0_10px_rgba(163,230,53,0.4)]' : 'border-[#333] group-hover:shadow-[0_0_10px_rgba(163,230,53,0.3)]'
       }`}>
         {getIcon()}
       </div>
 
       {/* Text Content */}
-      <div className="flex flex-col pr-2">
-        <span className="text-[10px] uppercase tracking-widest text-gray-400 font-mono">
+      <div className="flex flex-col pr-1 md:pr-2 min-w-0">
+        <span className="text-[8px] md:text-[10px] uppercase tracking-widest text-gray-400 font-mono">
           {date}
         </span>
-        <span className={`text-sm font-bold tracking-wide transition-colors ${
+        <span className={`text-xs md:text-sm font-bold tracking-wide truncate max-w-[100px] md:max-w-none transition-colors ${
           isReached ? 'text-lime-100' : 'text-white'
         }`}>
           {title}

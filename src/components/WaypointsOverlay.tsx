@@ -1,18 +1,23 @@
 import { useMemo, useRef, useState } from "react";
 import { timeline } from "../data/timeline";
 import { WaypointCard } from "./WaypointCard";
-import type { TimelineItem } from "../models/TimelineItem";
+import type { TimelineItem, TimelineType } from "../models/TimelineItem";
 import { DialogDetail } from "./DialogDetail";
 import { useViewportSize } from "../lib/useViewportSize";
 
 type WaypointsOverlayProps = {
   routePath: string;
   scrollProgress?: number;
+  activeFilter?: 'all' | TimelineType;
 };
 
 
 
-export const WaypointsOverlay = ({ routePath, scrollProgress = 0 }: WaypointsOverlayProps) => {
+export const WaypointsOverlay = ({ 
+  routePath, 
+  scrollProgress = 0,
+  activeFilter = 'all' 
+}: WaypointsOverlayProps) => {
   const viewport = useViewportSize();
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
@@ -69,6 +74,10 @@ export const WaypointsOverlay = ({ routePath, scrollProgress = 0 }: WaypointsOve
         aria-hidden="true"
       >
         {timeline.map((entry) => {
+          if (activeFilter !== 'all' && entry.type !== activeFilter) {
+            return null;
+          }
+
           const position = positionMap.get(entry.id);
           if (!position) {
             return null;
