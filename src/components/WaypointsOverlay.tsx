@@ -5,13 +5,13 @@ import type { TimelineItem, TimelineType } from "../models/TimelineItem";
 import { DialogDetail } from "./DialogDetail";
 import { useViewportSize } from "../lib/useViewportSize";
 
+import { MobileTimelineView } from "./MobileTimelineView";
+
 type WaypointsOverlayProps = {
   routePath: string;
   scrollProgress?: number;
   activeFilter?: 'all' | TimelineType;
 };
-
-
 
 export const WaypointsOverlay = ({ 
   routePath, 
@@ -22,6 +22,8 @@ export const WaypointsOverlay = ({
 
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const [activeEntry, setActiveEntry] = useState<TimelineItem | null>(null);
+
+  const isMobile = viewport.width > 0 && viewport.width < 768;
 
   const positions = useMemo(() => {
     if (!routePath || !viewport.width || !viewport.height) {
@@ -69,41 +71,49 @@ export const WaypointsOverlay = ({
 
   return (
     <>
-      <div
-        className="pointer-events-none fixed inset-0 z-10"
-        aria-hidden="true"
-      >
-        {timeline.map((entry) => {
-          if (activeFilter !== 'all' && entry.type !== activeFilter) {
-            return null;
-          }
+      {isMobile ? (
+        <MobileTimelineView
+          scrollProgress={scrollProgress}
+          activeFilter={activeFilter}
+          onSelectEntry={openDialog}
+        />
+      ) : (
+        <div
+          className="pointer-events-none fixed inset-0 z-10"
+          aria-hidden="true"
+        >
+          {timeline.map((entry) => {
+            if (activeFilter !== 'all' && entry.type !== activeFilter) {
+              return null;
+            }
 
-          const position = positionMap.get(entry.id);
-          if (!position) {
-            return null;
-          }
+            const position = positionMap.get(entry.id);
+            if (!position) {
+              return null;
+            }
 
-          const isReached = scrollProgress >= entry.routeProgressPercentage;
+            const isReached = scrollProgress >= entry.routeProgressPercentage;
 
-          return (
-            <div
-              key={entry.id}
-              className="pointer-events-auto absolute cursor-pointer"
-              onClick={() => openDialog(entry)}
-            >
-              <WaypointCard
+            return (
+              <div
                 key={entry.id}
-                type={entry.type}
-                date={entry.date}
-                title={entry.title}
-                top={`${position.y}px`}
-                left={`${position.x}px`}
-                isReached={isReached}
-              />
-            </div>
-          );
-        })}
-      </div>
+                className="pointer-events-auto absolute cursor-pointer"
+                onClick={() => openDialog(entry)}
+              >
+                <WaypointCard
+                  key={entry.id}
+                  type={entry.type}
+                  date={entry.date}
+                  title={entry.title}
+                  top={`${position.y}px`}
+                  left={`${position.x}px`}
+                  isReached={isReached}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <dialog
         ref={dialogRef}
