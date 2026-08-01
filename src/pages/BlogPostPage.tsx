@@ -81,15 +81,15 @@ export const BlogPostPage = () => {
         <header className="space-y-4 border-b border-[#232f1e] pb-8">
           <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-slate-400">
             <span className="px-2.5 py-1 rounded bg-lime-400/10 border border-lime-500/30 text-lime-400 font-semibold uppercase">
-              {post.category}
+              {post.category || 'ARTICLE'}
             </span>
             <span className="flex items-center gap-1">
               <Calendar size={13} />
-              {post.date}
+              {post.published_timestamp ? post.published_timestamp.split('T')[0] : ''}
             </span>
             <span className="flex items-center gap-1">
               <Clock size={13} />
-              {post.readTime}
+              {post.reading_time_minutes} min read
             </span>
           </div>
 
@@ -98,12 +98,12 @@ export const BlogPostPage = () => {
           </h1>
 
           <p className="text-base font-mono text-slate-300/90 leading-relaxed">
-            {post.excerpt}
+            {post.description}
           </p>
 
           {/* Tags */}
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            {post.tags.map((tag) => (
+            {post.tag_list.map((tag) => (
               <span
                 key={tag}
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono text-slate-400 bg-[#0d120c] border border-[#222c1e]"
@@ -140,7 +140,7 @@ export const BlogPostPage = () => {
 
         {/* Main Post Body */}
         <div className="prose prose-invert max-w-none space-y-6 text-slate-200 text-sm md:text-base font-sans leading-relaxed">
-          {post.content
+          {post.body_markdown
             .trim()
             .split('\n\n')
             .map((block, idx) => {
@@ -185,8 +185,8 @@ export const BlogPostPage = () => {
         <footer className="mt-12 pt-8 border-t border-[#232f1e] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-[#0a0d09]/90 p-6 rounded-xl border">
           <div className="space-y-1">
             <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest">AUTHOR</span>
-            <h4 className="text-base font-bold text-white font-mono">{post.author.name}</h4>
-            <p className="text-xs font-mono text-lime-400">{post.author.role}</p>
+            <h4 className="text-base font-bold text-white font-mono">{post.author?.name || 'Vitor Rodrigues'}</h4>
+            <p className="text-xs font-mono text-lime-400">{post.author?.role || 'Staff Frontend Engineer'}</p>
           </div>
 
           <Link

@@ -1,21 +1,32 @@
-import type { BlogPost } from '../models/BlogPost';
+import type { BlogPostDetail } from '../models/BlogPost';
 
-export const posts: BlogPost[] = [
+export const posts: BlogPostDetail[] = [
   {
-    id: 'post-1',
-    slug: 'procedural-canvas-iso-contours-gsap',
+    type_of: 'article',
+    id: 1,
     title: 'Procedural Topographical Maps: Rendering 60FPS Iso-Contours with Canvas 2D & GSAP',
-    excerpt: 'A deep dive into combining simplex-noise, d3-contour, and GSAP ScrollTrigger to render smooth, scroll-synced topographic vector lines without GPU overhead.',
-    date: '2026-03-15',
-    readTime: '6 min read',
+    description: 'A deep dive into combining simplex-noise, d3-contour, and GSAP ScrollTrigger to render smooth, scroll-synced topographic vector lines without GPU overhead.',
+    slug: 'procedural-canvas-iso-contours-gsap',
+    path: '/blog/procedural-canvas-iso-contours-gsap',
+    url: 'https://dev.to/vitor/procedural-canvas-iso-contours-gsap',
+    published_timestamp: '2026-03-15T10:00:00Z',
+    published_at: '2026-03-15T10:00:00Z',
+    created_at: '2026-03-15T09:00:00Z',
+    cover_image: '',
+    social_image: '',
+    canonical_url: 'https://dev.to/vitor/procedural-canvas-iso-contours-gsap',
+    page_views_count: 1420,
+    reading_time_minutes: 6,
+    tag_list: ['Canvas2D', 'GSAP', 'd3-contour', 'Performance', 'Mathematics'],
+    tags: 'Canvas2D, GSAP, d3-contour, Performance, Mathematics',
+    body_html: '',
     category: 'canvas',
-    tags: ['Canvas2D', 'GSAP', 'd3-contour', 'Performance', 'Mathematics'],
     author: {
       name: 'Vitor Rodrigues',
       role: 'Staff Frontend Engineer',
     },
     relatedWaypointId: 'semmiewealth',
-    content: `
+    body_markdown: `
 ## Background & Architecture
 
 When building interactive portfolio experiences, relying on massive raster image assets or heavy 3D WebGL pipelines can impair page load speeds and mobile battery performance. For the **Topographical Timeline**, the goal was to achieve a dynamic 60 FPS vector terrain background that seamlessly syncs with user scrolling.
@@ -43,20 +54,31 @@ const isoPolygons = contourGenerator(heightGrid);
     `,
   },
   {
-    id: 'post-2',
-    slug: 'scaling-hybrid-mobile-web-frontend-architecture',
+    type_of: 'article',
+    id: 2,
     title: 'Architecting Hybrid Mobile & Web Frontend Systems at Scale',
-    excerpt: 'Lessons learned leading cross-platform engineering teams across React, React Native, and web design systems.',
-    date: '2026-01-10',
-    readTime: '8 min read',
+    description: 'Lessons learned leading cross-platform engineering teams across React, React Native, and web design systems.',
+    slug: 'scaling-hybrid-mobile-web-frontend-architecture',
+    path: '/blog/scaling-hybrid-mobile-web-frontend-architecture',
+    url: 'https://dev.to/vitor/scaling-hybrid-mobile-web-frontend-architecture',
+    published_timestamp: '2026-01-10T10:00:00Z',
+    published_at: '2026-01-10T10:00:00Z',
+    created_at: '2026-01-10T09:00:00Z',
+    cover_image: '',
+    social_image: '',
+    canonical_url: 'https://dev.to/vitor/scaling-hybrid-mobile-web-frontend-architecture',
+    page_views_count: 980,
+    reading_time_minutes: 8,
+    tag_list: ['Architecture', 'React', 'React Native', 'Design Systems', 'TypeScript'],
+    tags: 'Architecture, React, React Native, Design Systems, TypeScript',
+    body_html: '',
     category: 'architecture',
-    tags: ['Architecture', 'React', 'React Native', 'Design Systems', 'TypeScript'],
     author: {
       name: 'Vitor Rodrigues',
       role: 'Staff Frontend Engineer',
     },
     relatedWaypointId: 'mindera',
-    content: `
+    body_markdown: `
 ## The Hybrid Challenge
 
 Modern frontend engineering requires building experiences that span native mobile devices (iOS/Android) and responsive web browsers without duplicating core business logic, API validation, or telemetry hooks.
@@ -80,20 +102,31 @@ export const trackEvent = (event: TelemetryEvent) => {
     `,
   },
   {
-    id: 'post-3',
-    slug: 'optimizing-react-19-scroll-driven-animations',
+    type_of: 'article',
+    id: 3,
     title: 'High-Frequency Scroll State in React 19: Avoiding Unnecessary Re-Renders',
-    excerpt: 'How to bind high-frequency scroll telemetry (GSAP scrub handlers) to React components without bottlenecking the main UI loop.',
-    date: '2025-11-22',
-    readTime: '5 min read',
+    description: 'How to bind high-frequency scroll telemetry (GSAP scrub handlers) to React components without bottlenecking the main UI loop.',
+    slug: 'optimizing-react-19-scroll-driven-animations',
+    path: '/blog/optimizing-react-19-scroll-driven-animations',
+    url: 'https://dev.to/vitor/optimizing-react-19-scroll-driven-animations',
+    published_timestamp: '2025-11-22T10:00:00Z',
+    published_at: '2025-11-22T10:00:00Z',
+    created_at: '2025-11-22T09:00:00Z',
+    cover_image: '',
+    social_image: '',
+    canonical_url: 'https://dev.to/vitor/optimizing-react-19-scroll-driven-animations',
+    page_views_count: 2150,
+    reading_time_minutes: 5,
+    tag_list: ['React 19', 'Performance', 'DOM Sync', 'Hooks'],
+    tags: 'React 19, Performance, DOM Sync, Hooks',
+    body_html: '',
     category: 'performance',
-    tags: ['React 19', 'Performance', 'DOM Sync', 'Hooks'],
     author: {
       name: 'Vitor Rodrigues',
       role: 'Staff Frontend Engineer',
     },
     relatedWaypointId: 'semmiewealth',
-    content: `
+    body_markdown: `
 ## The Problem with High-Frequency State
 
 Updating React state on every frame during a smooth scroll event (\`window.onscroll\` or \`requestAnimationFrame\`) often triggers excessive virtual DOM recalculations, dropping frame rates on mid-range devices.
@@ -106,20 +139,31 @@ Updating React state on every frame during a smooth scroll event (\`window.onscr
     `,
   },
   {
-    id: 'post-4',
-    slug: 'designing-futuristic-hud-telemetry-interfaces',
+    type_of: 'article',
+    id: 4,
     title: 'Designing Tech-Forward HUD Telemetry Interfaces for the Web',
-    excerpt: 'Crafting glowing tactical interfaces, dark mode glassmorphism, and responsive monospace typography using modern Tailwind CSS.',
-    date: '2025-08-04',
-    readTime: '7 min read',
+    description: 'Crafting glowing tactical interfaces, dark mode glassmorphism, and responsive monospace typography using modern Tailwind CSS.',
+    slug: 'designing-futuristic-hud-telemetry-interfaces',
+    path: '/blog/designing-futuristic-hud-telemetry-interfaces',
+    url: 'https://dev.to/vitor/designing-futuristic-hud-telemetry-interfaces',
+    published_timestamp: '2025-08-04T10:00:00Z',
+    published_at: '2025-08-04T10:00:00Z',
+    created_at: '2025-08-04T09:00:00Z',
+    cover_image: '',
+    social_image: '',
+    canonical_url: 'https://dev.to/vitor/designing-futuristic-hud-telemetry-interfaces',
+    page_views_count: 1890,
+    reading_time_minutes: 7,
+    tag_list: ['UI/UX', 'TailwindCSS', 'HUD', 'Glassmorphism', 'Design'],
+    tags: 'UI/UX, TailwindCSS, HUD, Glassmorphism, Design',
+    body_html: '',
     category: 'career',
-    tags: ['UI/UX', 'TailwindCSS', 'HUD', 'Glassmorphism', 'Design'],
     author: {
       name: 'Vitor Rodrigues',
       role: 'Staff Frontend Engineer',
     },
     relatedWaypointId: 'mealhada-1982',
-    content: `
+    body_markdown: `
 ## Aesthetics as Functional Telemetry
 
 Cybernetic and tactical HUD (Heads-Up Display) designs turn raw portfolio data into an immersive narrative experience. 
@@ -132,20 +176,31 @@ Cybernetic and tactical HUD (Heads-Up Display) designs turn raw portfolio data i
     `,
   },
   {
-    id: 'post-5',
-    slug: 'building-resilient-frontend-engineering-culture',
+    type_of: 'article',
+    id: 5,
     title: 'Building Resilient Engineering Teams & Technical Mentorship',
-    excerpt: 'Strategies for leading frontend initiatives, establishing code quality standards, and fostering continuous learning across engineering teams.',
-    date: '2025-04-18',
-    readTime: '6 min read',
+    description: 'Strategies for leading frontend initiatives, establishing code quality standards, and fostering continuous learning across engineering teams.',
+    slug: 'building-resilient-frontend-engineering-culture',
+    path: '/blog/building-resilient-frontend-engineering-culture',
+    url: 'https://dev.to/vitor/building-resilient-frontend-engineering-culture',
+    published_timestamp: '2025-04-18T10:00:00Z',
+    published_at: '2025-04-18T10:00:00Z',
+    created_at: '2025-04-18T09:00:00Z',
+    cover_image: '',
+    social_image: '',
+    canonical_url: 'https://dev.to/vitor/building-resilient-frontend-engineering-culture',
+    page_views_count: 760,
+    reading_time_minutes: 6,
+    tag_list: ['Leadership', 'Mentorship', 'Code Quality', 'Engineering Culture'],
+    tags: 'Leadership, Mentorship, Code Quality, Engineering Culture',
+    body_html: '',
     category: 'career',
-    tags: ['Leadership', 'Mentorship', 'Code Quality', 'Engineering Culture'],
     author: {
       name: 'Vitor Rodrigues',
       role: 'Staff Frontend Engineer',
     },
     relatedWaypointId: 'mindera',
-    content: `
+    body_markdown: `
 ## Cultivating Technical Excellence
 
 Great engineering teams aren't built solely on tech stacks; they are fostered through clear communication, shared architectural patterns, and psychological safety.

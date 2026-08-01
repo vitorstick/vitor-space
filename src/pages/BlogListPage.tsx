@@ -14,8 +14,8 @@ export const BlogListPage = () => {
 
       const matchesSearch =
         post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        post.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        post.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.tag_list.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
 
       return matchesCategory && matchesSearch;
     });
@@ -68,11 +68,10 @@ export const BlogListPage = () => {
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
-                  selectedCategory === cat.id
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${selectedCategory === cat.id
                     ? 'bg-lime-400 text-black font-semibold shadow-[0_0_12px_rgba(163,230,53,0.3)]'
                     : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-white'
-                }`}
+                  }`}
               >
                 {cat.label}
               </button>
@@ -93,17 +92,17 @@ export const BlogListPage = () => {
                   <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
                     <span className="flex items-center gap-1.5 text-lime-400 uppercase tracking-wider">
                       <BookOpen size={13} />
-                      {post.category}
+                      {post.category || 'ARTICLE'}
                     </span>
 
                     <div className="flex items-center gap-3">
                       <span className="flex items-center gap-1">
                         <Calendar size={12} />
-                        {post.date}
+                        {post.published_timestamp ? post.published_timestamp.split('T')[0] : ''}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock size={12} />
-                        {post.readTime}
+                        {post.reading_time_minutes} min read
                       </span>
                     </div>
                   </div>
@@ -115,14 +114,14 @@ export const BlogListPage = () => {
                     </Link>
                   </h2>
 
-                  {/* Excerpt */}
+                  {/* Excerpt / Description */}
                   <p className="text-xs text-slate-300/80 leading-relaxed font-sans">
-                    {post.excerpt}
+                    {post.description}
                   </p>
 
                   {/* Tag List */}
                   <div className="flex flex-wrap items-center gap-1.5 pt-2">
-                    {post.tags.map((tag) => (
+                    {post.tag_list.map((tag) => (
                       <span
                         key={tag}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono text-slate-400 bg-black/40 border border-[#222c1e]"
@@ -137,7 +136,7 @@ export const BlogListPage = () => {
                 {/* Read Article CTA Footer */}
                 <div className="mt-6 pt-4 border-t border-[#1a2316] flex items-center justify-between">
                   <span className="text-[11px] font-mono text-slate-400">
-                    BY {post.author.name.toUpperCase()}
+                    BY {(post.author?.name || 'VITOR FERREIRA').toUpperCase()}
                   </span>
 
                   <Link
