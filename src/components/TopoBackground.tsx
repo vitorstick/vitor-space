@@ -203,30 +203,34 @@ export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProp
   const snapshotRef = useRef<TerrainSnapshot | null>(null)
 
   useEffect(() => {
+    if (!routePath) return
+    const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    pathElement.setAttribute('d', routePath)
+    pathElementRef.current = pathElement
+  }, [routePath])
+
+  const drawRoute = () => {
     const canvas = canvasRef.current
-    if (!canvas || !routePath) return
+    if (!canvas || !snapshotRef.current || !pathElementRef.current) return
 
     const context = canvas.getContext('2d')
     if (!context) return
 
-    const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    pathElement.setAttribute('d', routePath)
-    pathElementRef.current = pathElement
+    // Clear main canvas & draw cached terrain layer
+    context.clearRect(0, 0, canvas.width, canvas.height)
+    context.drawImage(snapshotRef.current.terrainCanvas, 0, 0)
 
-    const drawRoute = () => {
-      if (!snapshotRef.current || !pathElementRef.current) return
+    context.save()
+    drawAuxiliaryRouteLines(context, pathElementRef.current)
+    drawActiveRouteLine(context, pathElementRef.current, scrollProgress)
+    drawScrollBullet(context, pathElementRef.current, scrollProgress)
+    context.restore()
+  }
 
-      // Clear main canvas & draw cached terrain layer
-      context.clearRect(0, 0, canvas.width, canvas.height)
-      context.drawImage(snapshotRef.current.terrainCanvas, 0, 0)
-
-      context.save()
-      drawAuxiliaryRouteLines(context, pathElementRef.current)
-      drawActiveRouteLine(context, pathElementRef.current, scrollProgress)
-      drawScrollBullet(context, pathElementRef.current, scrollProgress)
-      context.restore()
-    }
-    
+  // Build / rebuild terrain snapshot on mount, routePath change, or window resize
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !routePath) return
 
     const rebuild = () => {
       const width = window.innerWidth
@@ -238,7 +242,10 @@ export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProp
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
 
-      context.setTransform(dpr, 0, 0, dpr, 0, 0)
+      const context = canvas.getContext('2d')
+      if (context) {
+        context.setTransform(dpr, 0, 0, dpr, 0, 0)
+      }
 
       snapshotRef.current = buildTerrain(width, height)
       drawRoute()
@@ -250,7 +257,12 @@ export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProp
     return () => {
       window.removeEventListener('resize', rebuild)
     }
-  }, [routePath, scrollProgress])
+  }, [routePath])
+
+  // Redraw path & bullet when scrollProgress changes without re-generating terrain
+  useEffect(() => {
+    drawRoute()
+  }, [scrollProgress])
 
   return <canvas ref={canvasRef} className="fixed inset-0 -z-10" aria-hidden="true" />
 }
