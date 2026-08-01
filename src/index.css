@@ -44,7 +44,12 @@ body::before {
 
 @layer utilities {
   /* Animate the dialog itself */
+  .dialog-animated:not([open]) {
+    display: none !important;
+  }
+
   .dialog-animated[open] {
+    display: flex;
     animation: slideUpFade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 

@@ -96,19 +96,18 @@ export const WaypointsOverlay = ({ routePath, scrollProgress = 0 }: WaypointsOve
         })}
       </div>
 
-      {/* 1. Added fixed, inset-0, and m-auto for guaranteed centering */}
-      {/* 2. Added onClick to check if the backdrop was clicked */}
       <dialog
         ref={dialogRef}
         onClick={(e) => e.target === dialogRef.current && closeDialog()}
-        className="fixed inset-0 m-auto w-[90vw] h-[90vh] max-w-6xl rounded-2xl bg-white shadow-2xl backdrop:bg-black/60 backdrop:backdrop-blur-sm dialog-animated p-0"
+        onCancel={(e) => {
+          e.preventDefault();
+          closeDialog();
+        }}
+        className="fixed inset-0 z-50 w-full h-full max-w-none max-h-none p-4 border-0 bg-transparent shadow-none backdrop:bg-black/75 backdrop:backdrop-blur-md dialog-animated items-center justify-center outline-none"
       >
-        {/* 3. Wrap inner content in a div with padding so clicks inside don't trigger the close */}
-        <div className="h-full w-full p-8 overflow-y-auto relative">
-          {activeEntry && (
-            <DialogDetail entry={activeEntry} onClose={closeDialog} />
-          )}
-        </div>
+        {activeEntry && (
+          <DialogDetail entry={activeEntry} onClose={closeDialog} />
+        )}
       </dialog>
     </>
   );

@@ -1,83 +1,128 @@
 import type { TimelineItem } from "../models/TimelineItem";
-// Using lucide-react for the close icon to match the previous component
-import { Building2, CalendarDays, MapPinCheck } from "lucide-react"; 
+import { Building2, CalendarDays, Code2, MapPinCheck, Terminal, Cpu } from "lucide-react";
 
 type DialogDetailProps = {
-    entry: TimelineItem;
-    onClose: () => void;
+  entry: TimelineItem;
+  onClose: () => void;
 };
 
 export const DialogDetail = ({ entry, onClose }: DialogDetailProps) => {
-    return (
-<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-brightness-50">
-            {/* The subtle grid pattern backdrop */}
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '16px 16px' }}></div>
-            
-            {/* // 2. Main Dialog Box: Asymmetric cuts and thin glowing lines */}
-            <div className="relative w-full max-w-xl p-10 overflow-hidden bg-[#121412]/80 shadow-[0_0_60px_rgba(0,0,0,0.8)] backdrop-blur-sm group" 
-                 style={{ clipPath: 'polygon(0 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%)' }}>
-                
-                {/* 3. Integrated Vector Connectors (Stylized lines anchoring to origin) */}
-                <div className="absolute -top-1 -left-1 w-8 h-8 border-l-2 border-t-2 border-lime-400 group-hover:shadow-[0_0_10px_rgba(163,230,53,0.5)] transition-all"></div>
-                <div className="absolute top-2 left-2 text-[8px] font-mono text-lime-400 tracking-wider">SYSTEM_READOUT v2.1</div>
+  return (
+    <div
+      className="relative w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden bg-[#121512]/95 border border-[#2a3524] shadow-[0_0_80px_rgba(0,0,0,0.9)] rounded-xl group text-left"
+    >
+      {/* Subtle grid pattern backdrop */}
+      <div
+        className="absolute inset-0 opacity-15 pointer-events-none"
+        style={{ backgroundImage: 'radial-gradient(#333 1px, transparent 1px)', backgroundSize: '20px 20px' }}
+      />
+      <div className="absolute top-2 left-3 text-[9px] font-mono text-lime-400/90 tracking-widest uppercase">
+        SYSTEM_TELEMETRY // WAYPOINT_ID: {entry.id}
+      </div>
 
-                {/* 4. Amber Close button indicator */}
-                <button
-                    className="absolute top-4 right-4 px-2 py-1 border border-amber-600/60 font-mono text-xs text-amber-500 hover:bg-amber-950 transition-colors z-10"
-                    onClick={onClose}
-                    aria-label="Close dialog"
-                >
-                    CLOSE [X]
-                </button>
+      {/* Close Button */}
+      <button
+        className="absolute top-3 right-4 px-3 py-1 border border-lime-500/40 rounded font-mono text-xs text-lime-400 hover:bg-lime-950/60 hover:border-lime-400 transition-colors z-20 cursor-pointer"
+        onClick={onClose}
+        aria-label="Close dialog"
+      >
+        ESC [X]
+      </button>
 
-                <div className="relative z-10 flex flex-col gap-6">
-                    {/* Header: Title */}
-                    <div className="flex flex-col gap-1 pr-16 border-b border-[#333] pb-4">
-                        <span className="text-sm font-mono tracking-widest text-gray-500 uppercase">LOCATION_DEEP_DIVE:</span>
-                        <h2 className="text-3xl font-bold tracking-tight text-white uppercase">
-                            {entry.title}
-                        </h2>
-                    </div>
+      <div className="p-6 md:p-8 overflow-y-auto flex flex-col gap-6 text-slate-200">
+        {/* Header */}
+        <div className="flex flex-col gap-1.5 pt-4 border-b border-[#283222] pb-5">
+          <div className="flex items-center gap-2 text-xs font-mono text-lime-400/80 tracking-widest uppercase">
+            {entry.type === 'location' ? <MapPinCheck size={14} /> : <Code2 size={14} />}
+            <span>{entry.type === 'location' ? 'LOCATION_HUB' : 'WORK_EXPERIENCE'}</span>
+          </div>
 
-                    {/* Technical Readout Layout (Columns) */}
-                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 border-b border-[#333] pb-6">
-                        {/* TYPE telemetry */}
-                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-[#222]">
-                            <Building2 size={24} className="text-lime-400" />
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-mono text-gray-500">TYPE:</span>
-                                <span className="text-base font-semibold text-white uppercase">{entry.type}</span>
-                            </div>
-                        </div>
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white uppercase">
+            {entry.role || entry.title}
+          </h2>
 
-                        {/* DATE telemetry */}
-                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-[#222]">
-                            <CalendarDays size={24} className="text-lime-400" />
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-mono text-gray-500">DATE:</span>
-                                <span className="text-base font-semibold text-white uppercase">{entry.date}</span>
-                            </div>
-                        </div>
-
-                        {/* STATUS telemetry (New placeholder) */}
-                        <div className="flex items-center gap-3 p-3 bg-black/40 border border-[#222]">
-                            <MapPinCheck size={24} className="text-lime-400" />
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-mono text-gray-500">STATUS:</span>
-                                <span className="text-base font-semibold text-amber-500 uppercase">DEPLOYED</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {/* Amber Monospace Content */}
-                    <div className="flex flex-col gap-2 pt-2 text-sm leading-relaxed text-amber-300 font-mono">
-                        <span className="text-xs text-gray-500">_DESCRIPTION:</span>
-                        {/* Example description telemetry text */}
-                        <p>Waypoint details and project telemetry loaded successfully. Logistics, integration, and cultural adaptation complete.</p>
-                        <p>_LOG: Local coordination synchronized 04:21 UTC.</p>
-                    </div>
-                </div>
-            </div>
+          {entry.company && entry.role ? (
+            <p className="text-sm font-mono text-lime-300/90">
+              @ {entry.company}
+            </p>
+          ) : null}
         </div>
-    );
+
+        {/* Telemetry Status Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="flex items-center gap-2.5 p-2.5 bg-black/50 border border-[#222b1d] rounded">
+            <CalendarDays size={18} className="text-lime-400 shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] font-mono text-gray-400 uppercase">TIMEFRAME</span>
+              <span className="text-xs font-semibold text-white truncate">{entry.date}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 p-2.5 bg-black/50 border border-[#222b1d] rounded">
+            <Building2 size={18} className="text-lime-400 shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] font-mono text-gray-400 uppercase">TYPE</span>
+              <span className="text-xs font-semibold text-white uppercase truncate">{entry.type}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 p-2.5 bg-black/50 border border-[#222b1d] rounded col-span-2 sm:col-span-1">
+            <Cpu size={18} className="text-lime-400 shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-[9px] font-mono text-gray-400 uppercase">STATUS</span>
+              <span className={`text-xs font-semibold uppercase truncate ${entry.status === 'ACTIVE DEPLOYMENT' ? 'text-lime-400 animate-pulse' : 'text-amber-400'
+                }`}>
+                {entry.status || 'DEPLOYED'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Tech Stack Pills */}
+        {entry.technologies && entry.technologies.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Terminal size={12} className="text-lime-400" />
+              TECHNOLOGY_STACK:
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {entry.technologies.map((tech) => (
+                <span
+                  key={tech}
+                  className="px-2.5 py-1 text-xs font-mono bg-[#182216] border border-[#2e4028] text-lime-200 rounded-md shadow-sm"
+                >
+                  {tech}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {/* Description */}
+        {entry.description ? (
+          <div className="flex flex-col gap-1.5 text-sm text-slate-300 font-sans">
+            <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">OVERVIEW:</span>
+            <p className="leading-relaxed bg-black/30 p-3 rounded border border-[#222]">{entry.description}</p>
+          </div>
+        ) : null}
+
+        {/* Key Achievements / Telemetry Bullets */}
+        {entry.bullets && entry.bullets.length > 0 ? (
+          <div className="flex flex-col gap-2 pt-1 border-t border-[#222b1d]">
+            <span className="text-[10px] font-mono text-lime-400/90 uppercase tracking-wider">
+              KEY_DELIVERABLES & ACHIEVEMENTS:
+            </span>
+            <ul className="flex flex-col gap-2 text-xs md:text-sm text-slate-200 font-sans">
+              {entry.bullets.map((bullet) => (
+                <li key={bullet} className="flex items-start gap-2 bg-black/40 p-2.5 rounded border border-[#1e271a]">
+                  <span className="text-lime-400 font-mono text-xs mt-0.5 select-none">▸</span>
+                  <span className="leading-relaxed">{bullet}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
 };
