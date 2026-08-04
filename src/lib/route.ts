@@ -2,14 +2,24 @@ const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value))
 
 export const createRoutePath = (width: number, height: number) => {
-  const horizontalPadding = Math.max(120, width * 0.08)
-  const topPadding = Math.max(130, height * 0.14)
-  const bottomPadding = Math.max(90, height * 0.12)
+  // Responsive horizontal padding based on screen width
+  const horizontalPadding = Math.max(60, Math.min(220, width * 0.075))
+
+  // Dynamically calculate the vertical span and center of the route bounding box.
+  // Peak Y anchor is at 0.08 (Berlin), Valley Y anchor is at 0.82 (Porto). Anchor Y span = 0.74.
+  // Center of anchor Y range is (0.08 + 0.82) / 2 = 0.45.
+  const anchorYSpan = 0.74
+  const minSpan = Math.max(200, height - 280)
+  const maxSpan = Math.min(580, height * 0.46)
+  const targetRouteHeight = Math.min(maxSpan, Math.max(180, minSpan))
+
+  const totalSpan = targetRouteHeight / anchorYSpan
+  const targetCenterY = height * 0.51 // Slightly below absolute 0.50 to account for top HUD bar (~75px)
 
   const minX = horizontalPadding
   const maxX = width - horizontalPadding
-  const minY = topPadding
-  const maxY = height - bottomPadding
+  const minY = targetCenterY - 0.45 * totalSpan
+  const maxY = minY + totalSpan
 
   const toX = (ratio: number) => minX + ratio * (maxX - minX)
   const toY = (ratio: number) => minY + ratio * (maxY - minY)
