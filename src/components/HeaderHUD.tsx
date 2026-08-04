@@ -50,7 +50,7 @@ export const HeaderHUD = ({
           </div>
 
           <span className="hidden lg:inline-block text-[11px] font-mono text-slate-400 border-l border-[#222c1e] pl-3 py-0.5">
-            Staff Frontend & Mobile Architect
+            Senior Software Engineer
           </span>
         </div>
 
@@ -58,11 +58,10 @@ export const HeaderHUD = ({
         <nav className="flex items-center gap-1 bg-black/70 p-1 rounded-lg border border-[#222c1e]">
           <Link
             to="/"
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-all ${
-              isTimelinePage
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-all ${isTimelinePage
                 ? 'bg-lime-400 text-black font-bold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
                 : 'text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             <Route size={13} />
             <span>TELEMETRY</span>
@@ -70,11 +69,10 @@ export const HeaderHUD = ({
 
           <Link
             to="/blog"
-            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-all ${
-              isBlogPage
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-all ${isBlogPage
                 ? 'bg-lime-400 text-black font-bold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
                 : 'text-slate-400 hover:text-white'
-            }`}
+              }`}
           >
             <BookOpen size={13} />
             <span>BLOG</span>
@@ -109,11 +107,10 @@ export const HeaderHUD = ({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onFilterChange('all')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
-                  activeFilter === 'all'
+                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${activeFilter === 'all'
                     ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
                     : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Layers size={12} />
                 <span>ALL</span>
@@ -121,11 +118,10 @@ export const HeaderHUD = ({
 
               <button
                 onClick={() => onFilterChange('code')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
-                  activeFilter === 'code'
+                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${activeFilter === 'code'
                     ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
                     : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <Code2 size={12} />
                 <span>ROLES</span>
@@ -133,11 +129,10 @@ export const HeaderHUD = ({
 
               <button
                 onClick={() => onFilterChange('location')}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${
-                  activeFilter === 'location'
+                className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${activeFilter === 'location'
                     ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
                     : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 <MapPinCheck size={12} />
                 <span>LOCATIONS</span>

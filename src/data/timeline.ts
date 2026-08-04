@@ -227,7 +227,7 @@ export const timeline: TimelineItem[] = [
     role: 'Staff Frontend Engineer',
     description: 'Led frontend development and technical architecture with Angular, RxJS, Akita, and Nx.',
     date: '2024-04',
-    routeProgressPercentage: 0.900,
+    routeProgressPercentage: 0.953,
     type: 'code',
     status: 'COMPLETED',
     technologies: ['Angular', 'RxJS', 'Akita', 'Nx Monorepo', 'Sass', 'Frontend Architecture'],

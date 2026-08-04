@@ -43,7 +43,7 @@ export const createRoutePath = (width: number, height: number) => {
     [0.733, 0.08], // berlin-11    — HIGH PEAK (location)
     [0.80, 0.30],  // bigenius-12  — descent
     [0.867, 0.78], // amsterdam-13 — LOW VALLEY (location)
-    [0.90, 0.55],  // dialog-14    — recovery
+    [0.933, 0.48], // dialog-14    — recovery
     [0.98, 0.40],  // semmiewealth-15
   ]
 
@@ -65,7 +65,7 @@ export const createRoutePath = (width: number, height: number) => {
     [0.715, 0.06], // into berlin-11       — HIGH PEAK
     [0.775, 0.24], // into bigenius        — leaving peak
     [0.848, 0.82], // into amsterdam-13    — deep valley
-    [0.888, 0.52], // into dialog-14       — recovery
+    [0.910, 0.50], // into dialog-14       — recovery
     [0.955, 0.40], // into semmiewealth
   ]
 
