@@ -42,7 +42,7 @@ export const HeaderHUD = ({
           <div className="flex items-center gap-2 text-xs font-mono tracking-[0.2em] text-lime-400 uppercase">
             <Activity size={15} className="animate-pulse text-lime-400 shrink-0" />
             <Link to="/" className="font-bold text-white hover:text-lime-300 transition-colors">
-              VITOR_RODRIGUES
+              VITOR_Ferreira
             </Link>
             <span className="hidden sm:inline text-lime-400/80 font-normal">
               // {isBlogPage ? 'ENGINEERING_LOGS' : 'CAREER_TELEMETRY'}
@@ -59,8 +59,8 @@ export const HeaderHUD = ({
           <Link
             to="/"
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-all ${isTimelinePage
-                ? 'bg-lime-400 text-black font-bold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
-                : 'text-slate-400 hover:text-white'
+              ? 'bg-lime-400 text-black font-bold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
+              : 'text-slate-400 hover:text-white'
               }`}
           >
             <Route size={13} />
@@ -70,8 +70,8 @@ export const HeaderHUD = ({
           <Link
             to="/blog"
             className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-all ${isBlogPage
-                ? 'bg-lime-400 text-black font-bold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
-                : 'text-slate-400 hover:text-white'
+              ? 'bg-lime-400 text-black font-bold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
+              : 'text-slate-400 hover:text-white'
               }`}
           >
             <BookOpen size={13} />
@@ -108,8 +108,8 @@ export const HeaderHUD = ({
               <button
                 onClick={() => onFilterChange('all')}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${activeFilter === 'all'
-                    ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
-                    : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
+                  ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
+                  : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
                   }`}
               >
                 <Layers size={12} />
@@ -119,8 +119,8 @@ export const HeaderHUD = ({
               <button
                 onClick={() => onFilterChange('code')}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${activeFilter === 'code'
-                    ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
-                    : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
+                  ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
+                  : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
                   }`}
               >
                 <Code2 size={12} />
@@ -130,8 +130,8 @@ export const HeaderHUD = ({
               <button
                 onClick={() => onFilterChange('location')}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-mono transition-all cursor-pointer ${activeFilter === 'location'
-                    ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
-                    : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
+                  ? 'bg-lime-400 text-black font-semibold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
+                  : 'bg-black/60 text-slate-400 border border-[#222c1e] hover:border-lime-500/50 hover:text-slate-200'
                   }`}
               >
                 <MapPinCheck size={12} />
