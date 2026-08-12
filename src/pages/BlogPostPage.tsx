@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Calendar, Clock, Tag, Share2, Check, ExternalLink, Heart, MessageSquare, AlertCircle, BookOpen } from 'lucide-react';
 import { getDevToArticleDetail, parseDevToTags } from '../lib/devto';
+import { ArticleSummarizer } from '../components/ArticleSummarizer';
 import type { DevToArticleDetail } from '../models/DevToArticle';
 
 export const BlogPostPage = () => {
@@ -10,26 +11,23 @@ export const BlogPostPage = () => {
   const navigate = useNavigate();
 
   const [article, setArticle] = useState<DevToArticleDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(Boolean(articleId));
+  const [error, setError] = useState<string | null>(articleId ? null : 'Article ID parameter missing.');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!articleId) {
-      setError('Article ID parameter missing.');
-      setLoading(false);
       return;
     }
 
     let isMounted = true;
-    setLoading(true);
-    setError(null);
 
-    getDevToArticleDetail(articleId)
+    void getDevToArticleDetail(articleId)
       .then((data) => {
         if (isMounted) {
           setArticle(data);
           setLoading(false);
+          setError(null);
         }
       })
       .catch((err: Error) => {
@@ -192,6 +190,13 @@ export const BlogPostPage = () => {
             ))}
           </div>
         </header>
+
+        {/* Built-in AI Summarizer HUD (Rendered only when supported by browser) */}
+        <ArticleSummarizer
+          rawMarkdown={article.body_markdown}
+          rawHtml={article.body_html}
+          articleTitle={article.title}
+        />
 
         {/* Article Body HTML */}
         <div
