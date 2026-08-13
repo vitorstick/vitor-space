@@ -4,18 +4,12 @@ import {
   Zap,
   Send,
   Square,
-  Cpu,
-  DownloadCloud,
   Terminal,
   Bot,
   User,
   Trash2,
   Copy,
   Check,
-  HelpCircle,
-  ChevronUp,
-  ShieldCheck,
-  Info,
 } from 'lucide-react';
 import {
   checkLanguageModelAvailability,
@@ -25,6 +19,7 @@ import {
   type AIAvailabilityStatus,
   type ChatMessage,
 } from '../lib/aiAssistant';
+import { AskAIHeader } from '../components/AskAIHeader';
 
 const SUGGESTED_PROMPTS = [
   'What technical stack does Vitor specialize in?',
@@ -40,7 +35,6 @@ export const AskAIPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showSetupGuide, setShowSetupGuide] = useState(false);
   const [useSimulation, setUseSimulation] = useState(false);
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -207,129 +201,16 @@ export const AskAIPage = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const isModelDownloadRequired =
-    availability === 'after-download' || availability === 'downloadable';
-
   return (
     <div className="min-h-screen bg-[#070906] text-slate-100 pt-24 md:pt-28 pb-16 px-4 md:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
         {/* Top Header Card */}
-        <div className="rounded-2xl border border-lime-500/30 bg-[#0a0d09]/95 backdrop-blur-md p-6 md:p-8 shadow-[0_4px_30px_rgba(163,230,53,0.08)] space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-lime-950/60 border border-lime-500/40 text-lime-400 shadow-[0_0_15px_rgba(163,230,53,0.2)]">
-                <Bot size={24} className="animate-pulse" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-xl md:text-2xl font-bold font-mono tracking-wide text-white uppercase">
-                    ASK_VITOR // NEURAL_ASSISTANT
-                  </h1>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-lime-950/50 border border-lime-500/30 text-lime-300">
-                    <Cpu size={12} />
-                    {useSimulation ? 'SIMULATED TELEMETRY' : 'GEMINI NANO LOCAL'}
-                  </span>
-                </div>
-                <p className="text-xs md:text-sm font-mono text-slate-400 mt-0.5">
-                  Ask questions about Vitor's career timeline, tech stacks, roles, and milestones
-                </p>
-              </div>
-            </div>
-
-            {/* Status Indicator Badge */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#232f1e] bg-black/60 text-xs font-mono">
-                <span
-                  className={`w-2 h-2 rounded-full ${!useSimulation && isLanguageModelUsable(availability || 'unsupported')
-                    ? 'bg-lime-400 shadow-[0_0_8px_#a3e635]'
-                    : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                    }`}
-                />
-                <span className="text-slate-300">
-                  {!useSimulation && isLanguageModelUsable(availability || 'unsupported')
-                    ? isModelDownloadRequired
-                      ? 'DOWNLOADABLE'
-                      : 'ON-DEVICE ACTIVE'
-                    : 'SIMULATION MODE'}
-                </span>
-              </div>
-
-              <button
-                onClick={() => setShowSetupGuide(!showSetupGuide)}
-                className="p-2 rounded-lg border border-[#232f1e] bg-black/40 text-slate-400 hover:text-lime-300 hover:border-lime-500/40 transition-colors"
-                title="Chrome Built-in AI info & Setup"
-                aria-label="Toggle setup guide"
-              >
-                <HelpCircle size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Download Progress Bar */}
-          {downloadProgress !== null && (
-            <div className="p-4 rounded-xl border border-lime-500/40 bg-lime-950/30 space-y-2 animate-fadeIn">
-              <div className="flex items-center justify-between text-xs font-mono text-lime-300">
-                <span className="flex items-center gap-2">
-                  <DownloadCloud size={16} className="animate-bounce" />
-                  DOWNLOADING_GEMINI_NANO_MODEL_WEIGHTS...
-                </span>
-                <span className="font-bold">{downloadProgress}%</span>
-              </div>
-              <div className="w-full h-2 bg-black rounded-full overflow-hidden border border-lime-500/30">
-                <div
-                  className="h-full bg-lime-400 transition-all duration-300 shadow-[0_0_10px_#a3e635]"
-                  style={{ width: `${downloadProgress}%` }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Chrome AI Setup Guide (Collapsible) */}
-          {showSetupGuide && (
-            <div className="p-4 md:p-5 rounded-xl border border-[#232f1e] bg-black/80 space-y-3 text-xs font-mono text-slate-300 animate-fadeIn">
-              <div className="flex items-center justify-between border-b border-[#232f1e] pb-2 text-lime-400 font-bold">
-                <span className="flex items-center gap-1.5">
-                  <Info size={14} />
-                  HOW CHROME LOCAL AI WORKS
-                </span>
-                <button
-                  onClick={() => setShowSetupGuide(false)}
-                  className="text-slate-500 hover:text-slate-300"
-                >
-                  <ChevronUp size={16} />
-                </button>
-              </div>
-              <p className="leading-relaxed text-slate-400">
-                This feature uses Chrome's experimental <strong>Prompt API (Gemini Nano)</strong> to run on-device inference directly inside your browser. No data leaves your machine.
-              </p>
-              <div className="space-y-2 bg-[#050804] p-3 rounded-lg border border-[#1b2517]">
-                <p className="text-white font-semibold">To enable Chrome Built-in AI:</p>
-                <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                  <li>Use Google Chrome (version 128+ or Chrome Canary/Dev).</li>
-                  <li>
-                    Navigate to <code className="text-lime-300 bg-lime-950/60 px-1 py-0.5 rounded">chrome://flags/#prompt-api-for-gemini-nano</code> and set to <strong>Enabled</strong>.
-                  </li>
-                  <li>
-                    Navigate to <code className="text-lime-300 bg-lime-950/60 px-1 py-0.5 rounded">chrome://flags/#optimization-guide-on-device-model</code> and set to <strong>Enabled BypassPerfRequirement</strong>.
-                  </li>
-                  <li>Restart Chrome and visit <code className="text-lime-300 bg-lime-950/60 px-1 py-0.5 rounded">chrome://components</code> to check <em>Optimization Guide On Device Model</em>.</li>
-                </ol>
-              </div>
-              <div className="flex items-center justify-between pt-1 text-[11px] text-slate-500">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck size={13} className="text-lime-400" />
-                  Grounded on verified data from Vitor's timeline
-                </span>
-                <button
-                  onClick={() => setUseSimulation(!useSimulation)}
-                  className="text-lime-400 hover:underline cursor-pointer"
-                >
-                  {useSimulation ? 'Switch to Chrome AI Mode' : 'Switch to Fallback Mode'}
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <AskAIHeader
+          availability={availability}
+          useSimulation={useSimulation}
+          onToggleSimulation={() => setUseSimulation((prev) => !prev)}
+          downloadProgress={downloadProgress}
+        />
 
         {/* Conversation Box */}
         <div className="rounded-2xl border border-[#232f1e] bg-[#0a0d09]/95 backdrop-blur-md min-h-[420px] max-h-[600px] flex flex-col overflow-hidden shadow-2xl">
