@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, BookOpen, Code2, Layers, MapPinCheck, Route } from 'lucide-react';
+import { Activity, BookOpen, Bot, Code2, Layers, MapPinCheck, Route } from 'lucide-react';
 import type { TimelineType } from '../models/TimelineItem';
 
 type HeaderHUDProps = {
@@ -22,6 +22,7 @@ export const HeaderHUD = ({
 
   const isTimelinePage = location.pathname === '/' || location.pathname.startsWith('/waypoint');
   const isBlogPage = location.pathname.startsWith('/blog');
+  const isAIPage = location.pathname.startsWith('/ask-ai') || location.pathname.startsWith('/chat');
 
   const scrollToPercentage = (percentage: number) => {
     const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -45,7 +46,7 @@ export const HeaderHUD = ({
               VITOR_Ferreira
             </Link>
             <span className="hidden sm:inline text-lime-400/80 font-normal">
-              // {isBlogPage ? 'ENGINEERING_LOGS' : 'CAREER_TELEMETRY'}
+              // {isBlogPage ? 'ENGINEERING_LOGS' : isAIPage ? 'NEURAL_ASSISTANT' : 'CAREER_TELEMETRY'}
             </span>
           </div>
 
@@ -76,6 +77,17 @@ export const HeaderHUD = ({
           >
             <BookOpen size={13} />
             <span>BLOG</span>
+          </Link>
+
+          <Link
+            to="/ask-ai"
+            className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-mono transition-all ${isAIPage
+              ? 'bg-lime-400 text-black font-bold shadow-[0_0_10px_rgba(163,230,53,0.4)]'
+              : 'text-slate-400 hover:text-white'
+              }`}
+          >
+            <Bot size={13} />
+            <span>ASK AI</span>
           </Link>
         </nav>
       </div>

@@ -4,6 +4,7 @@ import { HeaderHUD } from './components/HeaderHUD';
 import { TimelinePage } from './pages/TimelinePage';
 import { BlogListPage } from './pages/BlogListPage';
 import { BlogPostPage } from './pages/BlogPostPage';
+import { AskAIPage } from './pages/AskAIPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { timeline } from './data/timeline';
 import type { TimelineType } from './models/TimelineItem';
@@ -57,6 +58,8 @@ function App() {
         <Route path="/blog" element={<BlogListPage />} />
         <Route path="/blog/:id" element={<BlogPostPage />} />
         <Route path="/blog/:slug" element={<BlogPostPage />} />
+        <Route path="/ask-ai" element={<AskAIPage />} />
+        <Route path="/chat" element={<AskAIPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
