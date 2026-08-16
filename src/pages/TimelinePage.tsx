@@ -142,8 +142,21 @@ export const TimelinePage = ({
     );
   };
 
+  const filteredCount = useMemo(() => {
+    if (activeFilter === 'all') return timeline.length;
+    return timeline.filter((item) => item.type === activeFilter).length;
+  }, [activeFilter]);
+
+  const minHeightClass = isMobile
+    ? filteredCount <= 6
+      ? 'min-h-[145vh]'
+      : filteredCount <= 10
+      ? 'min-h-[250vh]'
+      : 'min-h-[380vh]'
+    : 'min-h-[400vh]';
+
   return (
-    <main className="relative min-h-[400vh] text-slate-100">
+    <main className={`relative ${minHeightClass} text-slate-100`}>
       {routePath ? <TopoBackground routePath={routePath} scrollProgress={scrollProgress} /> : null}
 
       {routePath ? (
