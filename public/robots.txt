@@ -2,5 +2,9 @@
 User-agent: *
 Allow: /
 
-# Sitemap Index
+# Sitemap & LLM Discovery
 Sitemap: https://www.vitorspace.com/sitemap.xml
+# https://llmstxt.org/
+# LLMs: https://www.vitorspace.com/llms.txt
+# LLMs-Full: https://www.vitorspace.com/llms-full.txt
+

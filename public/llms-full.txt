@@ -1,0 +1,67 @@
+# Vitor Ferreira // Complete Career Telemetry & Engineering Logs
+
+> Comprehensive machine-readable portfolio, telemetry, and background of Vitor Ferreira, Senior Software Engineer based in Amsterdam, Netherlands.
+
+## Professional Summary
+
+Vitor Ferreira is a Senior Software Engineer and Frontend Architect with extensive experience across modern web and mobile platforms. Specializing in high-performance web applications, scalable design systems, enterprise state management (NgRx, Redux, Akita), and hybrid mobile development (Ionic). Currently active in European FinTech in Amsterdam, leveraging modern tooling, TypeScript, React, Angular, and AI-assisted engineering workflows.
+
+## Key Waypoints & Work History
+
+### 1. SemmieWealth (2025-Present) - Amsterdam, Netherlands
+- Role: Senior Frontend Developer
+- Stack: Ionic, Angular, NgRx, Nx Monorepo, Jest, Azure/AWS, GitHub Actions, AI-assisted workflows.
+- Summary: Developing and enhancing the IEX Golden Bull-winning Semmie App across iOS, Android, and web. Managing modular architecture, hybrid native integrations, and robust test suites.
+
+### 2. Dialog (2024-2025) - Amsterdam, Netherlands
+- Role: Staff Frontend Engineer
+- Stack: Angular, RxJS, Akita, Nx Monorepo, Sass.
+- Summary: Led frontend architecture and core engineering decisions. Mentored team members, drove Nx monorepo patterns, and executed seamless major version upgrades.
+
+### 3. BiGenius (2023-2024) - Berlin, Germany
+- Role: Senior Frontend Developer
+- Stack: Angular, NgRx, Material Design, Ag-Grid, Cypress, Jest.
+- Summary: Built smart data automation platforms with high-density data grid tables, automated E2E testing pipelines, and customized Material Design interfaces.
+
+### 4. PagerDuty (2022-2023) - Lisbon, Portugal
+- Role: Senior Frontend Developer
+- Stack: React, TypeScript, Status Page, Shared Component Libraries, Jest.
+- Summary: Developed the greenfield "Status Page" product suite across administrative management and public status viewing React applications.
+
+### 5. Rydoo (2020-2022) - Lisbon, Portugal
+- Role: Senior Frontend Developer
+- Stack: Angular, NgRx, Nx Monorepo, Design System, Jest.
+- Summary: Scaled global expense management SaaS platform and established a unified corporate Design System.
+
+### 6. Hovione (2019-2020) - Lisbon, Portugal
+- Role: Full Stack Software Developer
+- Stack: Angular, Express.js, Docker, Industry 4.0, Cypress, Jenkins.
+- Summary: Delivered Industry 4.0 greenfield projects with Express.js APIs, Angular frontends, containerization, and automated CI/CD.
+
+### 7. BNP Paribas (2018-2019) - Lisbon, Portugal
+- Role: Frontend & Mobile Developer
+- Stack: Ionic, Angular, SCSS, Mobile Banking Apps, Design System.
+- Summary: Built hybrid mobile banking solutions and departmental design systems.
+
+### 8. ANF – National Pharmacies Association (2017-2018) - Lisbon, Portugal
+- Role: Frontend Developer
+- Stack: Angular, Redux, NgRx, JavaScript, LESS.
+- Summary: Built customer service web applications for national pharmacies in Portugal.
+
+### 9. Global Media Group (2016-2017) - Lisbon, Portugal
+- Role: Frontend Developer Consultant
+- Stack: Angular, TypeScript, Bootstrap, Web Performance.
+- Summary: Optimized high-traffic digital media publications and news portals.
+
+### 10. WeCreateYou (2015-2016) - Porto, Portugal
+- Role: Web Developer
+- Stack: PHP, JavaScript, HTML5, CSS3, Ajax, jQuery.
+- Summary: Built e-commerce websites and WeCreateFleet route planning software.
+
+## Links & Navigation
+
+- Homepage: https://www.vitorspace.com/
+- Engineering Logs: https://www.vitorspace.com/blog
+- Interactive AI Query Assistant: https://www.vitorspace.com/ask-ai
+- llms.txt Summary: https://www.vitorspace.com/llms.txt
+- Sitemap: https://www.vitorspace.com/sitemap.xml

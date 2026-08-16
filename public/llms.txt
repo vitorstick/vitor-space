@@ -1,0 +1,40 @@
+# Vitor Ferreira // Career Telemetry & Engineering Logs
+
+> Personal portfolio, interactive telemetry, and engineering logs of Vitor Ferreira, Senior Software Engineer based in Amsterdam, Netherlands. Specializing in high-performance frontend architecture, React, TypeScript, Angular, Ionic, and AI-assisted workflows.
+
+## Core Pages
+
+- [Homepage & Interactive Telemetry](https://www.vitorspace.com/): Interactive career roadmap with topographical HUD and GPS telemetry.
+- [Engineering Logs & Articles](https://www.vitorspace.com/blog): Technical articles, architecture breakdowns, and frontend engineering deep dives.
+- [Interactive AI Assistant](https://www.vitorspace.com/ask-ai): Browser-native Chrome AI (Gemini Nano) and telemetry query assistant.
+
+## Career Telemetry Waypoints
+
+- [SemmieWealth (Amsterdam, 2025-Present)](https://www.vitorspace.com/waypoint/semmiewealth-15): Senior Frontend Developer building the award-winning hybrid wealth platform with Ionic, NgRx, and AI-assisted workflows.
+- [Dialog (Amsterdam, 2024-2025)](https://www.vitorspace.com/waypoint/dialog-14): Staff Frontend Engineer leading architecture, mentoring, and Angular/RxJS/Akita/Nx migrations.
+- [Amsterdam Hub (2024)](https://www.vitorspace.com/waypoint/amsterdam-13): Current European engineering headquarters and fintech base.
+- [BiGenius (Berlin, 2023-2024)](https://www.vitorspace.com/waypoint/bigenius-12): Senior Frontend Developer engineering smart data automation platforms with Ag-Grid and NgRx.
+- [Berlin Hub (2023)](https://www.vitorspace.com/waypoint/berlin-11): European scale-up expansion.
+- [PagerDuty (Lisbon, 2022-2023)](https://www.vitorspace.com/waypoint/pagerduty-10): Senior Frontend Developer on the core Status Page product suite with React and TypeScript.
+- [Rydoo (Lisbon, 2020-2022)](https://www.vitorspace.com/waypoint/rydoo-09): Senior Frontend Developer scaling global expense management SaaS with Nx Monorepo and Design Systems.
+- [Hovione (Lisbon, 2019-2020)](https://www.vitorspace.com/waypoint/hovione-08): Full Stack Developer delivering Industry 4.0 applications with Express.js, Angular, and Docker CI/CD.
+- [BNP Paribas (Lisbon, 2018-2019)](https://www.vitorspace.com/waypoint/bnp-paribas-07): Frontend & Mobile Developer building enterprise banking apps and departmental design systems.
+- [ANF National Pharmacies (Lisbon, 2017-2018)](https://www.vitorspace.com/waypoint/anf-06): Frontend Developer engineering mission-critical pharmacy customer service portals.
+- [Global Media Group (Lisbon, 2016-2017)](https://www.vitorspace.com/waypoint/global-media-group-05): Frontend Consultant optimizing high-traffic digital media and news portals.
+- [Lisboa Hub (2016)](https://www.vitorspace.com/waypoint/lisboa-04): Expansion into fintech and enterprise systems.
+- [WeCreateYou (Porto, 2015-2016)](https://www.vitorspace.com/waypoint/wecreateyou-03): Web Developer building e-commerce solutions and WeCreateFleet route planning software.
+- [Porto Hub (2013)](https://www.vitorspace.com/waypoint/porto-02): Foundation for professional software engineering.
+- [Coimbra Academic Hub (2000)](https://www.vitorspace.com/waypoint/coimbra-01): Computer science and engineering academic foundation.
+- [Mealhada (1982)](https://www.vitorspace.com/waypoint/mealhada-00): Origin point in Portugal.
+
+## Technical Skills & Architecture
+
+- Languages: TypeScript, JavaScript (ES6+), HTML5, CSS3/SCSS, SQL.
+- Frameworks & Libraries: React, Angular (2-19), Ionic Framework, RxJS, NgRx, Redux, TailwindCSS, GSAP, D3.
+- Architecture: Nx Monorepos, Micro-frontends, Design Systems, State Management, Clean Architecture, TDD.
+- Tooling & Platforms: Vite, Webpack, Docker, Cypress, Jest, Git, GitHub Actions, AWS, Azure, Chrome Prompt API.
+
+## Optional
+
+- [Full Context & LLM Knowledge Base](https://www.vitorspace.com/llms-full.txt): Complete unabridged engineering telemetry, career history, and documentation.
+- [Sitemap XML](https://www.vitorspace.com/sitemap.xml): Machine-readable sitemap for web crawlers and indexers.
