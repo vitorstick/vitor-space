@@ -1,0 +1,6 @@
+# robots.txt for https://www.vitorspace.com
+User-agent: *
+Allow: /
+
+# Sitemap Index
+Sitemap: https://www.vitorspace.com/sitemap.xml
