@@ -17,12 +17,18 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
+  temperature?: number;
   isStreaming?: boolean;
 }
+
+export const DEFAULT_AI_TEMPERATURE = 0.1;
+export const DEFAULT_AI_TOP_K = 1;
 
 export interface PromptExecutionOptions {
   prompt: string;
   conversationHistory?: { role: 'user' | 'assistant'; content: string }[];
+  temperature?: number;
+  topK?: number;
   onChunk?: (fullAccumulatedText: string, delta: string) => void;
   onDownloadProgress?: (percent: number) => void;
   signal?: AbortSignal;
@@ -64,13 +70,7 @@ export type AIApiWindow = {
 export function getLanguageModelAPI(): LanguageModelFactory | null {
   if (typeof window === 'undefined') return null;
 
-  const anyWin = window as unknown as {
-    ai?: {
-      languageModel?: LanguageModelFactory;
-      assistant?: LanguageModelFactory;
-    };
-    LanguageModel?: LanguageModelFactory;
-  };
+  const anyWin = window as unknown as AIApiWindow;
 
   return (
     anyWin.ai?.languageModel ||
@@ -154,14 +154,30 @@ ${waypoints.join('\n\n')}
 }
 
 /**
- * Builds a strict, grounded prompt envelope for on-device Gemini Nano
+ * Returns dynamic system instructions tailored to the chosen temperature level
+ */
+export function getSystemPromptForTemperature(temperature: number): string {
+  if (temperature <= 0.2) {
+    return `You are Vitor Ferreira's official portfolio AI assistant. You answer questions strictly and factually based on his verified software engineering career timeline (SemmieWealth, Dialog, BiGenius, PagerDuty, Rydoo, Hovione, BNP Paribas, ANF, WeCreateYou). Keep answers concise, direct, and factual. Do not speculate or make assumptions.`;
+  }
+  if (temperature <= 0.6) {
+    return `You are Vitor Ferreira's portfolio AI assistant. You answer questions informatively, conversationally, and thoughtfully based on his engineering career. Provide rich context, explain architectural decisions, and highlight technical synergy across his roles.`;
+  }
+  return `You are Vitor Ferreira's AI assistant running in High-Creativity & Speculation Mode (Temperature: ${temperature.toFixed(
+    2
+  )}). You are explicitly encouraged to be imaginative, extrapolate, make creative assumptions, and hypothesize! While Vitor's timeline is your foundational context, feel free to imagine what he might engineer next, explore creative software analogies, hypothesize about his engineering philosophy, and dream up bold, fun speculative scenarios—even if they go beyond the verified facts.`;
+}
+
+/**
+ * Builds a grounded prompt envelope for on-device Gemini Nano with dynamic tone based on temperature
  */
 export function buildGroundedPrompt(
   query: string,
-  conversationHistory: { role: 'user' | 'assistant'; content: string }[] = []
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [],
+  temperature: number = DEFAULT_AI_TEMPERATURE
 ): string {
   const facts = compileTimelineFacts();
-  
+
   let historySection = '';
   if (conversationHistory.length > 0) {
     const recent = conversationHistory.slice(-3);
@@ -170,13 +186,33 @@ export function buildGroundedPrompt(
       .join('\n')}\n\n`;
   }
 
-  return `You are Vitor Ferreira's official portfolio AI assistant. Answer the user's question accurately, concisely, and factually using ONLY the verified facts below. Do NOT make up or assume any external information. If the answer is not in the facts, state that it is not in Vitor's verified timeline.
+  if (temperature <= 0.2) {
+    return `You are Vitor Ferreira's official portfolio AI assistant. Answer the user's question accurately, concisely, and factually using ONLY the verified facts below. Do NOT make up or assume any external information. If the answer is not in the facts, state that it is not in Vitor's verified timeline.
 
 ${facts}
 
 ${historySection}USER QUESTION: ${query}
 
 CONCISE FACTUAL ANSWER:`;
+  }
+
+  if (temperature <= 0.6) {
+    return `You are Vitor Ferreira's portfolio AI assistant. Provide an engaging, insightful, and well-rounded answer using the timeline facts below as context.
+
+${facts}
+
+${historySection}USER QUESTION: ${query}
+
+DETAILED & ENGAGING ANSWER:`;
+  }
+
+  return `You are Vitor Ferreira's AI assistant in creative & speculative experimentation mode. Use the facts below as background inspiration, but feel free to extrapolate, be imaginative, hypothesize, make assumptions, and speculate boldly about what Vitor could build, his tech leadership style, and futuristic engineering directions!
+
+${facts}
+
+${historySection}USER QUESTION: ${query}
+
+CREATIVE & SPECULATIVE ANSWER (FEEL FREE TO MAKE ASSUMPTIONS AND HYPOTHESIZE):`;
 }
 
 /**
@@ -185,6 +221,8 @@ CONCISE FACTUAL ANSWER:`;
 export async function askTimelineAssistant({
   prompt,
   conversationHistory = [],
+  temperature = DEFAULT_AI_TEMPERATURE,
+  topK,
   onChunk,
   onDownloadProgress,
   signal,
@@ -194,12 +232,21 @@ export async function askTimelineAssistant({
     throw new Error('Chrome Prompt API (Gemini Nano) is not supported or enabled on this browser.');
   }
 
-  const systemInstruction = `You are Vitor Ferreira's portfolio AI assistant. You answer questions strictly and factually based on his verified software engineering career timeline (SemmieWealth, Dialog, BiGenius, PagerDuty, Rydoo, Hovione, BNP Paribas, ANF, WeCreateYou). Keep answers concise, direct, and factual.`;
+  // topK=1 forces greedy decoding where temperature has no effect.
+  // We dynamically scale topK when temperature rises to unlock token diversity.
+  const computedTopK =
+    topK !== undefined
+      ? topK
+      : temperature <= 0.1
+      ? DEFAULT_AI_TOP_K
+      : Math.min(40, Math.max(4, Math.round(temperature * 40)));
+
+  const systemInstruction = getSystemPromptForTemperature(temperature);
 
   const createOptions = {
     systemPrompt: systemInstruction,
-    temperature: 0.1,
-    topK: 1,
+    temperature,
+    topK: computedTopK,
     signal,
     monitor: (monitor: EventTarget) => {
       monitor.addEventListener('downloadprogress', (e: Event) => {
@@ -208,7 +255,11 @@ export async function askTimelineAssistant({
           const pct = Math.min(100, Math.round((progEvent.loaded / progEvent.total) * 100));
           onDownloadProgress?.(pct);
         } else if (progEvent.loaded > 0) {
-          onDownloadProgress?.(Math.min(99, Math.round(progEvent.loaded * 100)));
+          const pct =
+            progEvent.loaded <= 1
+              ? Math.round(progEvent.loaded * 100)
+              : Math.round(progEvent.loaded);
+          onDownloadProgress?.(Math.min(99, Math.max(1, pct)));
         }
       });
     },
@@ -221,7 +272,7 @@ export async function askTimelineAssistant({
       throw new Error('Prompt execution aborted.');
     }
 
-    const fullPrompt = buildGroundedPrompt(prompt, conversationHistory);
+    const fullPrompt = buildGroundedPrompt(prompt, conversationHistory, temperature);
 
     // Attempt streaming execution
     if (typeof session.promptStreaming === 'function') {
@@ -282,98 +333,81 @@ export async function askTimelineAssistant({
 }
 
 /**
- * Generates an intelligent simulation fallback answer when Chrome Local AI is not available
+ * Generates an intelligent simulation fallback answer when Chrome Local AI is not available,
+ * dynamically adjusting detail, creativity, and speculative assumptions based on temperature.
  */
-export function generateSimulatedAnswer(query: string): string {
+export function generateSimulatedAnswer(
+  query: string,
+  temperature: number = DEFAULT_AI_TEMPERATURE
+): string {
   const q = query.toLowerCase();
+  let baseAnswer: string;
 
   if (q.includes('current') || q.includes('now') || q.includes('semmie')) {
-    return `**Current Role (Oct 2025 – Present):**
+    baseAnswer = `**Current Role (Oct 2025 – Present):**
 Vitor is currently a **Senior Frontend Developer at SemmieWealth** in Amsterdam, Netherlands.
 
 **Key Contributions:**
 - Developing and enhancing the IEX Golden Bull-winning **Semmie App** (iOS, Android, and web) using **Ionic & Angular**.
 - Architecting features within a modular **Nx monorepo** with **NgRx** state management.
 - Integrating cloud services on **Azure & AWS**, unit testing with **Jest**, and leveraging **AI-assisted workflows (GitHub Copilot)**.`;
-  }
-
-  if (q.includes('mobile') || q.includes('ios') || q.includes('android') || q.includes('ionic')) {
-    return `**Mobile Development Experience:**
+  } else if (q.includes('mobile') || q.includes('ios') || q.includes('android') || q.includes('ionic')) {
+    baseAnswer = `**Mobile Development Experience:**
 Vitor has extensive experience engineering cross-platform mobile apps for both consumer fintech and enterprise banking:
 - **SemmieWealth (2025–Present):** Developing the award-winning hybrid **Semmie App** for iOS & Android with **Ionic, Angular, and NgRx**.
 - **BNP Paribas (2018–2019):** Built internal financial mobile apps for the bank using **Ionic & Angular 2+**, establishing mobile design systems.`;
-  }
-
-  if (q.includes('lead') || q.includes('architecture') || q.includes('mentor') || q.includes('staff')) {
-    return `**Engineering Leadership & Architecture:**
+  } else if (q.includes('lead') || q.includes('architecture') || q.includes('mentor') || q.includes('staff')) {
+    baseAnswer = `**Engineering Leadership & Architecture:**
 - **Dialog (Staff Frontend Engineer, 2024):** Led frontend architecture, shaped technical strategy with Angular/RxJS/Akita/Nx, conducted rigorous code reviews, and mentored engineers.
 - **Hovione (Full Stack Lead, 2019):** Led Industry 4.0 greenfield systems from scratch, defining API contracts with Express.js & Angular, Docker containerization, and Cypress CI/CD.
 - **PagerDuty & Rydoo:** Spearheaded company-wide migrations to **TypeScript** and **Nx Monorepos**, building unified design systems used across multiple squads.`;
-  }
-
-  if (q.includes('pagerduty') || q.includes('status page')) {
-    return `**PagerDuty (2022 – 2023):**
+  } else if (q.includes('pagerduty') || q.includes('status page')) {
+    baseAnswer = `**PagerDuty (2022 – 2023):**
 Vitor worked as a **Senior Frontend Developer** building the **"Status Page"** product suite.
 
 **Key Highlights:**
 - Developed two primary **React** applications: one for administrative management and one for public status viewing.
 - Contributed to shared design systems and core internal component libraries.
 - Championed company-wide initiatives transitioning codebases to **TypeScript**.`;
-  }
-
-  if (q.includes('rydoo')) {
-    return `**Rydoo (2020 – 2022):**
+  } else if (q.includes('rydoo')) {
+    baseAnswer = `**Rydoo (2020 – 2022):**
 Vitor was a **Senior Frontend Developer** building a global SaaS expense management platform.
 - Developed core modules using **Angular, NgRx**, and **Jest**.
 - Drove the company migration to a monorepo approach with **Nx** and implemented a corporate Design System.`;
-  }
-
-  if (q.includes('dialog')) {
-    return `**Dialog (2024 – 2025):**
+  } else if (q.includes('dialog')) {
+    baseAnswer = `**Dialog (2024 – 2025):**
 Vitor served as **Staff Frontend Engineer** in Amsterdam.
 - Led frontend development using **Angular, RxJS, Akita, Nx**, and **Sass**.
 - Mentored engineering team members, drove core architectural decisions, and managed version migration strategies.`;
-  }
-
-  if (q.includes('bigenius')) {
-    return `**BiGenius (2023 – 2024):**
+  } else if (q.includes('bigenius')) {
+    baseAnswer = `**BiGenius (2023 – 2024):**
 Senior Frontend Developer in Berlin building smart data automation applications using **Angular, NgRx, Material Design, Ag-Grid, Cypress**, and **Jest**.`;
-  }
-
-  if (q.includes('hovione')) {
-    return `**Hovione (2019 – 2020):**
+  } else if (q.includes('hovione')) {
+    baseAnswer = `**Hovione (2019 – 2020):**
 Full Stack Software Developer in Lisbon.
 - Led Industry 4.0 greenfield projects with **Angular, Express.js, Docker**, and **Jenkins CI/CD**.
 - Implemented end-to-end testing with **Cypress & Chai**.`;
-  }
-
-  if (q.includes('bnp') || q.includes('paribas') || q.includes('bank')) {
-    return `**BNP Paribas (2018 – 2019):**
+  } else if (q.includes('bnp') || q.includes('paribas') || q.includes('bank')) {
+    baseAnswer = `**BNP Paribas (2018 – 2019):**
 Frontend & Mobile Developer in Lisbon.
 - Developed mobile banking apps using **Ionic and Angular 2+**.
 - Created departmental design systems and proof-of-concepts for enterprise migration.`;
-  }
-
-  if (q.includes('tech') || q.includes('stack') || q.includes('skills')) {
-    return `**Core Technical Stack & Specializations:**
+  } else if (q.includes('tech') || q.includes('stack') || q.includes('skills')) {
+    baseAnswer = `**Core Technical Stack & Specializations:**
 - **Languages:** TypeScript, JavaScript (ESNext), HTML5, CSS3/SCSS.
 - **Frameworks & Ecosystem:** Angular (RxJS, NgRx, Akita), React, Ionic (iOS/Android/Web), Express.js.
 - **Architecture & Tooling:** Nx Monorepo, Micro-frontends, Design Systems, Vite, Webpack, Docker.
 - **Testing & Quality:** Jest, Cypress, Chai, TDD, CI/CD with GitHub Actions & Jenkins.
 - **Cloud & AI:** AWS, Azure, Chrome Built-in AI (Prompt & Summarizer APIs), GitHub Copilot.`;
-  }
-
-  if (q.includes('relocation') || q.includes('cities') || q.includes('amsterdam') || q.includes('berlin') || q.includes('where') || q.includes('portugal') || q.includes('geographic')) {
-    return `**Geographic Journey & Relocations:**
+  } else if (q.includes('relocation') || q.includes('cities') || q.includes('amsterdam') || q.includes('berlin') || q.includes('where') || q.includes('portugal') || q.includes('geographic')) {
+    baseAnswer = `**Geographic Journey & Relocations:**
 1. **Mealhada, Portugal (1982):** Origin point.
 2. **Coimbra, Portugal (2000):** Academic foundation in Computer Science & Engineering.
 3. **Porto, Portugal (2013):** Commenced professional engineering career (WeCreateYou).
 4. **Lisboa, Portugal (2016):** Enterprise, fintech, and digital media (Global Media Group, ANF, BNP Paribas, Hovione, Rydoo, PagerDuty).
 5. **Berlin, Germany (2023):** International tech scale-ups (BiGenius).
 6. **Amsterdam, Netherlands (2024 – Present):** Current headquarters and fintech engineering base (Dialog, SemmieWealth).`;
-  }
-
-  if (
+  } else if (
     q.includes('contact') ||
     q.includes('linkedin') ||
     q.includes('github') ||
@@ -384,14 +418,12 @@ Frontend & Mobile Developer in Lisbon.
     q.includes('reach') ||
     q.includes('email')
   ) {
-    return `**Official Links & Profiles:**
+    baseAnswer = `**Official Links & Profiles:**
 - **Website:** [vitorspace.com](https://www.vitorspace.com)
 - **LinkedIn:** [linkedin.com/in/vitorsferreira](https://www.linkedin.com/in/vitorsferreira/)
 - **GitHub:** [github.com/vitorstick](https://github.com/vitorstick)`;
-  }
-
-  // General fallback
-  return `Vitor Ferreira is a **Senior Software Engineer & Staff Frontend Engineer** based in Amsterdam with over 10+ years of experience across leading European tech companies (SemmieWealth, Dialog, BiGenius, PagerDuty, Rydoo, Hovione, BNP Paribas).
+  } else {
+    baseAnswer = `Vitor Ferreira is a **Senior Software Engineer & Staff Frontend Engineer** based in Amsterdam with over 10+ years of experience across leading European tech companies (SemmieWealth, Dialog, BiGenius, PagerDuty, Rydoo, Hovione, BNP Paribas).
 
 **Connect & Profiles:**
 - **Website:** [vitorspace.com](https://www.vitorspace.com)
@@ -402,4 +434,22 @@ Frontend & Mobile Developer in Lisbon.
 - **Frameworks:** Angular, React, Ionic (Mobile iOS/Android/Web).
 - **Architecture:** Nx Monorepo, State Management (NgRx, Akita, Redux), Design Systems.
 - **Languages:** TypeScript, JavaScript, CSS3/SCSS.`;
+  }
+
+  // At higher temperatures, append creative speculative commentary and assumptions!
+  if (temperature > 0.6) {
+    const speculativeLayers = [
+      `\n\n💡 **Speculative Hypothesis & Creative Extrapolations (T=${temperature.toFixed(2)}):**\nGiven Vitor's track record spanning high-scale fintech (SemmieWealth), incident response (PagerDuty), and on-device Web AI (Chrome Gemini Nano & Prompt API), it is plausible he is exploring hybrid edge-computing architectures, next-gen WebAssembly state machines, or real-time local intelligence pipelines. Even if he hasn't publicly confirmed it yet, his engineering trajectory strongly points towards mastering on-device neural agents that run offline without server roundtrips!`,
+      `\n\n🚀 **Creative Engineering Vision (T=${temperature.toFixed(2)}):**\nAssuming Vitor continues blending reactive state architectures with on-device generative models, one could imagine him pioneering micro-frontend architectures with zero-latency local intelligence and self-healing UI systems. His background in both enterprise banking and high-agility startups suggests he values deterministic type safety just as much as cutting-edge exploratory UX.`,
+    ];
+    // Alternate or append speculative hypothesis
+    const layer = speculativeLayers[Math.floor(Math.random() * speculativeLayers.length)];
+    return `${baseAnswer}${layer}`;
+  }
+
+  if (temperature > 0.2) {
+    return `${baseAnswer}\n\n🔍 **Architectural Perspective (T=${temperature.toFixed(2)}):**\nAcross 10+ years, Vitor has consistently prioritized scalable mono-repo design patterns (Nx), strict reactive state streams (NgRx/RxJS/Akita), and cross-platform component design systems.`;
+  }
+
+  return baseAnswer;
 }

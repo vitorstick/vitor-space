@@ -16,6 +16,7 @@ import {
   isLanguageModelUsable,
   askTimelineAssistant,
   generateSimulatedAnswer,
+  DEFAULT_AI_TEMPERATURE,
   type AIAvailabilityStatus,
   type ChatMessage,
 } from '../lib/aiAssistant';
@@ -28,6 +29,8 @@ const SUGGESTED_PROMPTS = [
   'How can I connect with Vitor or view his profiles?',
 ];
 
+const STORAGE_KEY_TEMPERATURE = 'ask_vitor_temperature';
+
 export const AskAIPage = () => {
   const [availability, setAvailability] = useState<AIAvailabilityStatus | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -36,10 +39,47 @@ export const AskAIPage = () => {
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [useSimulation, setUseSimulation] = useState(false);
+  const [temperature, setTemperature] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_TEMPERATURE);
+      if (saved !== null) {
+        const parsed = parseFloat(saved);
+        if (!isNaN(parsed) && parsed >= 0.0 && parsed <= 1.0) {
+          return parsed;
+        }
+      }
+    } catch {
+      // Ignore localStorage error
+    }
+    return DEFAULT_AI_TEMPERATURE;
+  });
+
+  const handleTemperatureChange = (newTemp: number) => {
+    const clamped = Math.max(0.0, Math.min(1.0, Math.round(newTemp * 100) / 100));
+    setTemperature(clamped);
+    try {
+      localStorage.setItem(STORAGE_KEY_TEMPERATURE, clamped.toString());
+    } catch {
+      // Ignore localStorage error
+    }
+  };
 
   const abortControllerRef = useRef<AbortController | null>(null);
+  const simulationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const simulationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  const clearSimulationTimers = () => {
+    if (simulationTimeoutRef.current) {
+      clearTimeout(simulationTimeoutRef.current);
+      simulationTimeoutRef.current = null;
+    }
+    if (simulationIntervalRef.current) {
+      clearInterval(simulationIntervalRef.current);
+      simulationIntervalRef.current = null;
+    }
+  };
 
   // Check browser support on load
   useEffect(() => {
@@ -57,6 +97,21 @@ export const AskAIPage = () => {
     };
   }, []);
 
+  // Auto-focus input on mount
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  // Cleanup pending tasks on unmount
+  useEffect(() => {
+    return () => {
+      clearSimulationTimers();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   // Auto-scroll on new message content
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,8 +121,10 @@ export const AskAIPage = () => {
     const text = (promptToSend || inputText).trim();
     if (!text || isGenerating) return;
 
-    const userMessageId = `user-${Date.now()}`;
-    const assistantMessageId = `assistant-${Date.now()}`;
+    clearSimulationTimers();
+
+    const userMessageId = `user-${crypto.randomUUID()}`;
+    const assistantMessageId = `assistant-${crypto.randomUUID()}`;
 
     const newMessages: ChatMessage[] = [
       ...messages,
@@ -82,12 +139,15 @@ export const AskAIPage = () => {
         role: 'assistant',
         content: '',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        temperature,
         isStreaming: true,
       },
     ];
 
     setMessages(newMessages);
-    setInputText('');
+    if (!promptToSend) {
+      setInputText('');
+    }
     setIsGenerating(true);
     setDownloadProgress(null);
 
@@ -98,12 +158,13 @@ export const AskAIPage = () => {
 
     if (!isLiveAIUsable) {
       // Simulation mode with simulated streaming
-      setTimeout(() => {
-        const simAnswer = generateSimulatedAnswer(text);
+      simulationTimeoutRef.current = setTimeout(() => {
+        if (abortController.signal.aborted) return;
+        const simAnswer = generateSimulatedAnswer(text, temperature);
         let charIndex = 0;
-        const interval = setInterval(() => {
+        simulationIntervalRef.current = setInterval(() => {
           if (abortController.signal.aborted) {
-            clearInterval(interval);
+            clearSimulationTimers();
             setIsGenerating(false);
             return;
           }
@@ -117,7 +178,7 @@ export const AskAIPage = () => {
             )
           );
           if (charIndex >= simAnswer.length) {
-            clearInterval(interval);
+            clearSimulationTimers();
             setIsGenerating(false);
           }
         }, 20);
@@ -134,6 +195,7 @@ export const AskAIPage = () => {
       await askTimelineAssistant({
         prompt: text,
         conversationHistory: history,
+        temperature,
         signal: abortController.signal,
         onDownloadProgress: (pct) => {
           setDownloadProgress(pct);
@@ -180,19 +242,22 @@ export const AskAIPage = () => {
   };
 
   const handleStop = () => {
+    clearSimulationTimers();
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
-      setIsGenerating(false);
-      setDownloadProgress(null);
-      setMessages((prev) =>
-        prev.map((msg) => (msg.isStreaming ? { ...msg, isStreaming: false } : msg))
-      );
+      abortControllerRef.current = null;
     }
+    setIsGenerating(false);
+    setDownloadProgress(null);
+    setMessages((prev) =>
+      prev.map((msg) => (msg.isStreaming ? { ...msg, isStreaming: false } : msg))
+    );
   };
 
   const handleClearChat = () => {
     handleStop();
     setMessages([]);
+    textareaRef.current?.focus();
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -210,6 +275,8 @@ export const AskAIPage = () => {
           useSimulation={useSimulation}
           onToggleSimulation={() => setUseSimulation((prev) => !prev)}
           downloadProgress={downloadProgress}
+          temperature={temperature}
+          onTemperatureChange={handleTemperatureChange}
         />
 
         {/* Conversation Box */}
@@ -249,9 +316,9 @@ export const AskAIPage = () => {
 
                 {/* Suggested Prompt Chips */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 w-full max-w-xl text-left pt-2">
-                  {SUGGESTED_PROMPTS.map((prompt, idx) => (
+                  {SUGGESTED_PROMPTS.map((prompt) => (
                     <button
-                      key={idx}
+                      key={prompt}
                       onClick={() => void handleSendMessage(prompt)}
                       className="group flex items-start gap-2 p-3 rounded-xl border border-[#232f1e] bg-black/40 hover:bg-lime-950/30 hover:border-lime-500/40 transition-all text-xs font-mono text-slate-300 hover:text-white cursor-pointer"
                     >
@@ -281,7 +348,20 @@ export const AskAIPage = () => {
                       }`}
                   >
                     <div className="flex items-center justify-between gap-4 text-[10px] font-mono text-slate-500 pb-1 border-b border-white/5">
-                      <span>{msg.role === 'user' ? 'OPERATOR' : 'TELEMETRY_AI'}</span>
+                      <span className="flex items-center gap-1.5">
+                        {msg.role === 'user' ? (
+                          'OPERATOR'
+                        ) : (
+                          <>
+                            <span>TELEMETRY_AI</span>
+                            {msg.temperature !== undefined && (
+                              <span className="px-1 py-0.5 rounded bg-lime-950/50 text-lime-400/80 border border-lime-500/20 text-[9px]">
+                                T: {msg.temperature.toFixed(2)}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </span>
                       <span>{msg.timestamp}</span>
                     </div>
 
@@ -329,9 +409,9 @@ export const AskAIPage = () => {
           {messages.length > 0 && !isGenerating && (
             <div className="px-4 py-2 border-t border-[#1b2517] bg-black/40 flex items-center gap-2 overflow-x-auto no-scrollbar text-xs font-mono">
               <span className="text-[10px] text-slate-500 shrink-0 uppercase">SUGGESTIONS:</span>
-              {SUGGESTED_PROMPTS.slice(0, 3).map((p, i) => (
+              {SUGGESTED_PROMPTS.slice(0, 3).map((p) => (
                 <button
-                  key={i}
+                  key={p}
                   onClick={() => void handleSendMessage(p)}
                   className="shrink-0 px-2.5 py-1 rounded-md border border-[#232f1e] bg-[#0c100b] hover:border-lime-500/40 text-slate-400 hover:text-lime-300 transition-colors text-[11px] cursor-pointer truncate max-w-[220px]"
                 >
