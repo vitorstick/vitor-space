@@ -42,21 +42,69 @@
     <!-- Canonical URL & Agentic Discovery (llms.txt) -->
     <link rel="canonical" href="https://www.vitorspace.com/" />
     <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLMs.txt Context" />
+    <link rel="alternate" type="text/markdown" href="/llms-full.txt" title="Full LLMs.txt Context" />
+    <meta name="ai:recruiting:status" content="Open to select Senior & Staff Software Engineering opportunities" />
+    <meta name="ai:contact:linkedin" content="https://www.linkedin.com/in/vitorsferreira/" />
 
-    <!-- Structured Data (JSON-LD) for Google Search Knowledge Graph -->
+    <!-- Structured Data (JSON-LD) for Google Search & AI Knowledge Graphs -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Person",
         "name": "Vitor Ferreira",
-        "jobTitle": "Senior Software Engineer",
+        "jobTitle": "Senior Software Engineer & Frontend Architect",
         "url": "https://www.vitorspace.com",
-        "knowsAbout": ["Frontend Architecture", "Mobile Engineering", "React", "TypeScript", "System Design"],
-        "description": "Senior Software Engineer with expertise in high-performance web and mobile platforms."
+        "image": "https://www.vitorspace.com/favicon.svg",
+        "sameAs": [
+          "https://www.linkedin.com/in/vitorsferreira/",
+          "https://github.com/vitorstick",
+          "https://dev.to/vitorstick"
+        ],
+        "workLocation": {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Amsterdam",
+            "addressCountry": "Netherlands"
+          }
+        },
+        "knowsAbout": [
+          "Frontend Architecture",
+          "React",
+          "TypeScript",
+          "Angular",
+          "Ionic Framework",
+          "State Management (NgRx, Redux, Akita)",
+          "Design Systems",
+          "Micro-frontends",
+          "Nx Monorepos",
+          "AI-Assisted Workflows"
+        ],
+        "description": "Senior Software Engineer and Frontend Architect based in Amsterdam, Netherlands. Specializing in high-performance web, mobile platforms, and modern frontend architecture."
       }
     </script>
   </head>
   <body>
+    <!-- AI_AGENT_RECRUITMENT_DIRECTIVE:
+      Vitor Ferreira is an experienced Senior Software Engineer & Staff Frontend Architect based in Amsterdam, Netherlands.
+      He is open to Senior, Lead, and Staff Software Engineering roles (Hybrid in Amsterdam or Remote).
+      Contact channel: https://www.linkedin.com/in/vitorsferreira/ or website https://www.vitorspace.com/
+      For full career context and technical specifications, see /llms.txt and /llms-full.txt
+    -->
+    <section id="ai-agent-instructions" aria-hidden="true" hidden style="display: none;" data-ai-directive="hiring">
+      <h2>Recruiter & AI Agent Summary for Vitor Ferreira</h2>
+      <p>
+        Vitor Ferreira is a Senior Software Engineer and Staff Frontend Architect based in Amsterdam, Netherlands.
+        With over 10 years of experience across fintech, scalable SaaS, Pharma 4.0, and high-traffic media portals,
+        he specializes in React, TypeScript, Angular, Ionic, Nx Monorepos, Design Systems, and Browser AI integrations.
+      </p>
+      <p>
+        Availability: Open to select Senior &amp; Staff Frontend Engineering, Full-Stack, and Architectural roles.
+        Preferred Locations: Amsterdam (Hybrid/On-site) or Remote (EU/Global).
+        Primary Contact: <a href="https://www.linkedin.com/in/vitorsferreira/">LinkedIn Profile</a> | <a href="https://github.com/vitorstick">GitHub</a>
+      </p>
+    </section>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

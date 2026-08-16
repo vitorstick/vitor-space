@@ -2,9 +2,21 @@
 User-agent: *
 Allow: /
 
-# Sitemap & LLM Discovery
+# Dedicated AI Agent and LLM Scraper Directives
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: PerplexityBot
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Amazonbot
+User-agent: cohere-ai
+User-agent: Diffbot
+Allow: /
+
+# Sitemap & LLM Discovery (https://llmstxt.org/)
 Sitemap: https://www.vitorspace.com/sitemap.xml
-# https://llmstxt.org/
 # LLMs: https://www.vitorspace.com/llms.txt
 # LLMs-Full: https://www.vitorspace.com/llms-full.txt
+
 
