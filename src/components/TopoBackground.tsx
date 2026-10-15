@@ -1,27 +1,43 @@
 import { contours } from 'd3-contour'
 import { createNoise2D } from 'simplex-noise'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import { getScrollProgress, subscribeScrollProgress } from '../lib/scrollProgress'
 
 type TopoBackgroundProps = {
   routePath: string
-  scrollProgress: number
 }
 
 type TerrainSnapshot = {
   width: number
   height: number
+  dpr: number
   terrainCanvas: HTMLCanvasElement
 }
 
+type RouteGeometry = {
+  path2d: Path2D
+  pathElement: SVGPathElement
+  totalLength: number
+}
+
+// Created once so the terrain keeps the same shape across resizes
+// (e.g. mobile URL bar show/hide) instead of re-randomizing every rebuild.
+const noise2D = createNoise2D()
+
+// Glow is emulated with wide translucent strokes instead of `shadowBlur`,
+// which is very expensive to rasterize on long paths every frame.
+const ACTIVE_LINE_LAYERS = [
+  { strokeStyle: 'rgba(202, 250, 92, 0.07)', lineWidth: 28 },
+  { strokeStyle: 'rgba(202, 250, 92, 0.18)', lineWidth: 16 },
+  { strokeStyle: 'rgba(202, 250, 92, 0.45)', lineWidth: 7 },
+  { strokeStyle: '#caef5c', lineWidth: 2.5 },
+  { strokeStyle: '#ffffff', lineWidth: 1.2 },
+]
+
 const drawAuxiliaryRouteLines = (
   context: CanvasRenderingContext2D,
-  path: SVGPathElement
+  path2d: Path2D
 ) => {
-  const pathD = path.getAttribute('d')
-  if (!pathD) return
-
-  const path2d = new Path2D(pathD)
-
   context.save()
   context.strokeStyle = 'rgba(140, 165, 120, 0.22)'
   context.lineWidth = 1.5
@@ -34,52 +50,24 @@ const drawAuxiliaryRouteLines = (
 
 const drawActiveRouteLine = (
   context: CanvasRenderingContext2D,
-  path: SVGPathElement,
+  route: RouteGeometry,
   progress: number
 ) => {
   if (progress <= 0) return
 
-  const totalLength = path.getTotalLength()
-  const activeLength = totalLength * progress
-  const step = 4
+  // Draw only the traveled portion using a single dash: O(1) JS work per frame
+  // instead of sampling getPointAtLength() along the whole traveled length.
+  const activeLength = route.totalLength * progress
 
   context.save()
-  context.beginPath()
-  let first = true
-  for (let l = 0; l <= activeLength; l += step) {
-    const pt = path.getPointAtLength(l)
-    if (first) {
-      context.moveTo(pt.x, pt.y)
-      first = false
-    } else {
-      context.lineTo(pt.x, pt.y)
-    }
-  }
+  context.lineCap = 'round'
+  context.lineJoin = 'round'
+  context.setLineDash([activeLength, route.totalLength + 1])
 
-  const endPt = path.getPointAtLength(activeLength)
-  if (endPt) {
-    context.lineTo(endPt.x, endPt.y)
-  }
-
-  const lineConfigs = [
-    { strokeStyle: 'rgba(202, 250, 92, 0.25)', lineWidth: 16, blur: 16 },
-    { strokeStyle: 'rgba(202, 250, 92, 0.6)', lineWidth: 6, blur: 8 },
-    { strokeStyle: '#caef5c', lineWidth: 2.5, blur: 2 },
-    { strokeStyle: '#ffffff', lineWidth: 1.2, blur: 0 }
-  ]
-
-  for (const config of lineConfigs) {
-    context.save()
-    context.strokeStyle = config.strokeStyle
-    context.lineWidth = config.lineWidth
-    context.lineCap = 'round'
-    context.lineJoin = 'round'
-    if (config.blur > 0) {
-      context.shadowColor = '#caef5c'
-      context.shadowBlur = config.blur
-    }
-    context.stroke()
-    context.restore()
+  for (const layer of ACTIVE_LINE_LAYERS) {
+    context.strokeStyle = layer.strokeStyle
+    context.lineWidth = layer.lineWidth
+    context.stroke(route.path2d)
   }
 
   context.restore()
@@ -87,11 +75,10 @@ const drawActiveRouteLine = (
 
 const drawScrollBullet = (
   context: CanvasRenderingContext2D,
-  path: SVGPathElement,
+  route: RouteGeometry,
   progress: number
 ) => {
-  const totalLength = path.getTotalLength()
-  const point = path.getPointAtLength(progress * totalLength)
+  const point = route.pathElement.getPointAtLength(progress * route.totalLength)
 
   if (!point) return
 
@@ -128,13 +115,21 @@ const drawScrollBullet = (
   context.restore()
 }
 
-const buildTerrain = (width: number, height: number): TerrainSnapshot => {
+const buildTerrain = (
+  width: number,
+  height: number,
+  dpr: number,
+  route: RouteGeometry
+): TerrainSnapshot => {
+  // Rendered at device resolution so it can be blitted 1:1 (crisp + cheap).
   const terrainCanvas = document.createElement('canvas')
-  terrainCanvas.width = width
-  terrainCanvas.height = height
+  terrainCanvas.width = Math.floor(width * dpr)
+  terrainCanvas.height = Math.floor(height * dpr)
   const context = terrainCanvas.getContext('2d')
 
-  if (!context) return { width, height, terrainCanvas }
+  if (!context) return { width, height, dpr, terrainCanvas }
+
+  context.setTransform(dpr, 0, 0, dpr, 0, 0)
 
   // Dark topographic base background
   context.fillStyle = '#121510'
@@ -145,7 +140,6 @@ const buildTerrain = (width: number, height: number): TerrainSnapshot => {
   const cols = Math.ceil(width / resolution) + 1
   const rows = Math.ceil(height / resolution) + 1
   const values = new Float64Array(cols * rows)
-  const noise2D = createNoise2D()
 
   const noiseScale = 0.0025
   for (let y = 0; y < rows; y++) {
@@ -194,75 +188,68 @@ const buildTerrain = (width: number, height: number): TerrainSnapshot => {
 
   context.restore()
 
-  return { width, height, terrainCanvas }
+  // 4. The dashed auxiliary route never changes with scroll, so bake it in.
+  drawAuxiliaryRouteLines(context, route.path2d)
+
+  return { width, height, dpr, terrainCanvas }
 }
 
-export const TopoBackground = ({ routePath, scrollProgress }: TopoBackgroundProps) => {
+export const TopoBackground = ({ routePath }: TopoBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  const pathElementRef = useRef<SVGPathElement | null>(null)
+  const routeRef = useRef<RouteGeometry | null>(null)
   const snapshotRef = useRef<TerrainSnapshot | null>(null)
 
-  useEffect(() => {
-    if (!routePath) return
-    const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path')
-    pathElement.setAttribute('d', routePath)
-    pathElementRef.current = pathElement
-  }, [routePath])
-
-  const drawRoute = () => {
+  const drawRoute = useCallback(() => {
     const canvas = canvasRef.current
-    if (!canvas || !snapshotRef.current || !pathElementRef.current) return
+    const snapshot = snapshotRef.current
+    const route = routeRef.current
+    if (!canvas || !snapshot || !route) return
 
-    const context = canvas.getContext('2d')
+    const context = canvas.getContext('2d', { alpha: false })
     if (!context) return
 
-    // Clear main canvas & draw cached terrain layer
-    context.clearRect(0, 0, canvas.width, canvas.height)
-    context.drawImage(snapshotRef.current.terrainCanvas, 0, 0)
+    const progress = getScrollProgress()
 
-    context.save()
-    drawAuxiliaryRouteLines(context, pathElementRef.current)
-    drawActiveRouteLine(context, pathElementRef.current, scrollProgress)
-    drawScrollBullet(context, pathElementRef.current, scrollProgress)
-    context.restore()
-  }
+    // Blit cached terrain (+ auxiliary route) at device resolution.
+    // It's fully opaque, so no clearRect is needed.
+    context.setTransform(1, 0, 0, 1, 0, 0)
+    context.drawImage(snapshot.terrainCanvas, 0, 0)
 
-  // Build / rebuild terrain snapshot on mount, routePath change, or window resize
+    context.setTransform(snapshot.dpr, 0, 0, snapshot.dpr, 0, 0)
+    drawActiveRouteLine(context, route, progress)
+    drawScrollBullet(context, route, progress)
+  }, [])
+
+  // Build / rebuild route geometry + terrain snapshot when routePath changes.
+  // routePath is derived from the viewport size, so this also covers resizes.
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas || !routePath) return
 
-    const rebuild = () => {
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const dpr = window.devicePixelRatio || 1
-
-      canvas.width = Math.floor(width * dpr)
-      canvas.height = Math.floor(height * dpr)
-      canvas.style.width = `${width}px`
-      canvas.style.height = `${height}px`
-
-      const context = canvas.getContext('2d')
-      if (context) {
-        context.setTransform(dpr, 0, 0, dpr, 0, 0)
-      }
-
-      snapshotRef.current = buildTerrain(width, height)
-      drawRoute()
+    const pathElement = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+    pathElement.setAttribute('d', routePath)
+    const route: RouteGeometry = {
+      path2d: new Path2D(routePath),
+      pathElement,
+      totalLength: pathElement.getTotalLength(),
     }
+    routeRef.current = route
 
-    rebuild()
-    window.addEventListener('resize', rebuild)
+    const width = window.innerWidth
+    const height = window.innerHeight
+    const dpr = window.devicePixelRatio || 1
 
-    return () => {
-      window.removeEventListener('resize', rebuild)
-    }
-  }, [routePath])
+    canvas.width = Math.floor(width * dpr)
+    canvas.height = Math.floor(height * dpr)
+    canvas.style.width = `${width}px`
+    canvas.style.height = `${height}px`
 
-  // Redraw path & bullet when scrollProgress changes without re-generating terrain
-  useEffect(() => {
+    snapshotRef.current = buildTerrain(width, height, dpr, route)
     drawRoute()
-  }, [scrollProgress])
+  }, [routePath, drawRoute])
+
+  // Redraw path & bullet on scroll without going through React renders.
+  useEffect(() => subscribeScrollProgress(drawRoute), [drawRoute])
 
   return <canvas ref={canvasRef} className="fixed inset-0 -z-10" aria-hidden="true" />
 }

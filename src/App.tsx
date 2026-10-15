@@ -1,8 +1,7 @@
-import { useMemo, useState, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { HeaderHUD } from './components/HeaderHUD';
 import { TimelinePage } from './pages/TimelinePage';
-import { timeline } from './data/timeline';
 import type { TimelineType } from './models/TimelineItem';
 
 const BlogListPage = lazy(() => import('./pages/BlogListPage').then((m) => ({ default: m.BlogListPage })));
@@ -11,26 +10,13 @@ const AskAIPage = lazy(() => import('./pages/AskAIPage').then((m) => ({ default:
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then((m) => ({ default: m.NotFoundPage })));
 
 function App() {
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [activeFilter, setActiveFilter] = useState<'all' | TimelineType>('all');
-
-  const filteredTimeline = useMemo(() => {
-    if (activeFilter === 'all') return timeline;
-    return timeline.filter((item) => item.type === activeFilter);
-  }, [activeFilter]);
-
-  const reachedItemsCount = useMemo(() => {
-    return filteredTimeline.filter((item) => scrollProgress >= item.routeProgressPercentage).length;
-  }, [filteredTimeline, scrollProgress]);
 
   return (
     <>
       <HeaderHUD
-        scrollProgress={scrollProgress}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
-        totalItems={filteredTimeline.length}
-        reachedItems={reachedItemsCount}
       />
 
       <Suspense
@@ -45,8 +31,6 @@ function App() {
             path="/"
             element={
               <TimelinePage
-                scrollProgress={scrollProgress}
-                setScrollProgress={setScrollProgress}
                 activeFilter={activeFilter}
                 setActiveFilter={setActiveFilter}
               />
@@ -56,8 +40,6 @@ function App() {
             path="/waypoint/:waypointId"
             element={
               <TimelinePage
-                scrollProgress={scrollProgress}
-                setScrollProgress={setScrollProgress}
                 activeFilter={activeFilter}
                 setActiveFilter={setActiveFilter}
               />

@@ -1,6 +1,9 @@
+import { memo, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Activity, BookOpen, Bot, Code2, Layers, MapPinCheck, Route } from 'lucide-react';
 import type { TimelineType } from '../models/TimelineItem';
+import { timeline } from '../data/timeline';
+import { useScrollProgress } from '../lib/scrollProgress';
 
 type HeaderHUDProps = {
   scrollProgress?: number;
@@ -10,6 +13,39 @@ type HeaderHUDProps = {
   reachedItems?: number;
 };
 
+const TelemetryProgress = memo(({ activeFilter }: { activeFilter: 'all' | TimelineType }) => {
+  const filteredTimeline = useMemo(() => {
+    if (activeFilter === 'all') return timeline;
+    return timeline.filter((item) => item.type === activeFilter);
+  }, [activeFilter]);
+
+  const progressPercent = useScrollProgress((p) => Math.round(p * 100));
+  const reachedCount = useScrollProgress((p) =>
+    filteredTimeline.filter((item) => p >= item.routeProgressPercentage).length
+  );
+
+  return (
+    <div className="flex items-center gap-4 text-xs font-mono">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+          PROGRESS:
+        </span>
+        <span className="font-bold text-lime-400">{progressPercent}%</span>
+      </div>
+
+      <div className="flex items-center gap-1.5 border-l border-[#222c1e] pl-3">
+        <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+          WAYPOINTS:
+        </span>
+        <span className="text-slate-200">
+          {reachedCount}/{filteredTimeline.length}
+        </span>
+      </div>
+    </div>
+  );
+});
+TelemetryProgress.displayName = 'TelemetryProgress';
+
 export const HeaderHUD = ({
   scrollProgress = 0,
   activeFilter = 'all',
@@ -18,7 +54,8 @@ export const HeaderHUD = ({
   reachedItems = 0,
 }: HeaderHUDProps) => {
   const location = useLocation();
-  const progressPercent = Math.round(scrollProgress * 100);
+  const hasExplicitProgress = scrollProgress !== undefined && totalItems > 0;
+  const progressPercent = Math.round((scrollProgress ?? 0) * 100);
 
   const isTimelinePage = location.pathname === '/' || location.pathname.startsWith('/waypoint');
   const isBlogPage = location.pathname.startsWith('/blog');
@@ -97,23 +134,27 @@ export const HeaderHUD = ({
         <div className="border-t border-[#1f2b1b]/80 bg-[#060805]/95 px-4 py-2 md:px-6">
           <div className="mx-auto max-w-7xl flex flex-wrap items-center justify-between gap-3">
             {/* Progress Indicator */}
-            <div className="flex items-center gap-4 text-xs font-mono">
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider">
-                  PROGRESS:
-                </span>
-                <span className="font-bold text-lime-400">{progressPercent}%</span>
-              </div>
+            {hasExplicitProgress ? (
+              <div className="flex items-center gap-4 text-xs font-mono">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                    PROGRESS:
+                  </span>
+                  <span className="font-bold text-lime-400">{progressPercent}%</span>
+                </div>
 
-              <div className="flex items-center gap-1.5 border-l border-[#222c1e] pl-3">
-                <span className="text-[10px] text-slate-400 uppercase tracking-wider">
-                  WAYPOINTS:
-                </span>
-                <span className="text-slate-200">
-                  {reachedItems}/{totalItems}
-                </span>
+                <div className="flex items-center gap-1.5 border-l border-[#222c1e] pl-3">
+                  <span className="text-[10px] text-slate-400 uppercase tracking-wider">
+                    WAYPOINTS:
+                  </span>
+                  <span className="text-slate-200">
+                    {reachedItems}/{totalItems}
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <TelemetryProgress activeFilter={activeFilter} />
+            )}
 
             {/* Filter Pills */}
             <div className="flex items-center gap-1.5">

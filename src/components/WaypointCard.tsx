@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Building2, Code2, Mountain, Compass } from 'lucide-react';
 import type { TimelineType } from '../models/TimelineItem';
 
@@ -12,14 +13,14 @@ interface WaypointCardProps {
   isReached?: boolean;
 }
 
-export const WaypointCard: React.FC<WaypointCardProps> = ({ 
+export const WaypointCard = memo(({ 
   type, 
   date,
   title,
   top, 
   left,
   isReached = false
-}) => {
+}: WaypointCardProps) => {
   // Map the type to the corresponding icon
   const getIcon = (): React.ReactNode => {
     switch (type) {
@@ -32,7 +33,7 @@ export const WaypointCard: React.FC<WaypointCardProps> = ({
 
   return (
     <div 
-      className={`absolute flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 bg-[#1A1A1A]/95 border rounded-md shadow-2xl backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:border-lime-400 cursor-pointer group z-10 ${
+      className={`absolute flex items-center gap-1.5 md:gap-2 p-1.5 md:p-2 bg-[#1A1A1A]/95 border rounded-md shadow-2xl transition-[transform,border-color,box-shadow] duration-300 hover:scale-105 hover:border-lime-400 cursor-pointer group z-10 ${
         isReached ? 'border-lime-400/90 shadow-[0_0_15px_rgba(163,230,53,0.25)]' : 'border-[#333]'
       }`}
       style={{ top, left, transform: 'translate(-50%, calc(-100% - 16px))' }} // Pin dot rests precisely on path coordinate
@@ -65,7 +66,8 @@ export const WaypointCard: React.FC<WaypointCardProps> = ({
       }`} />
     </div>
   );
-};
+});
+WaypointCard.displayName = 'WaypointCard';
 
 // --- Example Usage ---
 //

@@ -1,31 +1,48 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { TopoBackground } from '../components/TopoBackground';
 import { WaypointCard } from '../components/WaypointCard';
 import { DialogDetail } from '../components/DialogDetail';
 import { MobileTimelineView } from '../components/MobileTimelineView';
 import { timeline } from '../data/timeline';
 import { createRoutePath } from '../lib/route';
+import { refreshScrollProgress, useScrollProgress } from '../lib/scrollProgress';
 import { useViewportSize } from '../lib/useViewportSize';
 import type { TimelineItem, TimelineType } from '../models/TimelineItem';
 
-gsap.registerPlugin(ScrollTrigger);
-
 type TimelinePageProps = {
-  scrollProgress: number;
-  setScrollProgress: (progress: number) => void;
   activeFilter: 'all' | TimelineType;
   setActiveFilter: (filter: 'all' | TimelineType) => void;
 };
 
-export const TimelinePage = ({
-  scrollProgress,
-  setScrollProgress,
-  activeFilter,
-  setActiveFilter,
-}: TimelinePageProps) => {
+type DesktopWaypointProps = {
+  entry: TimelineItem;
+  x: number;
+  y: number;
+  onSelect: (entry: TimelineItem) => void;
+};
+
+// Subscribes to a boolean derived from scroll progress, so it only re-renders
+// when this specific waypoint crosses its "reached" threshold.
+const DesktopWaypoint = memo(({ entry, x, y, onSelect }: DesktopWaypointProps) => {
+  const isReached = useScrollProgress((p) => p >= entry.routeProgressPercentage);
+
+  return (
+    <div className="pointer-events-auto absolute cursor-pointer" onClick={() => onSelect(entry)}>
+      <WaypointCard
+        type={entry.type}
+        date={entry.date}
+        title={entry.title}
+        top={`${y}px`}
+        left={`${x}px`}
+        isReached={isReached}
+      />
+    </div>
+  );
+});
+DesktopWaypoint.displayName = 'DesktopWaypoint';
+
+export const TimelinePage = ({ activeFilter, setActiveFilter }: TimelinePageProps) => {
   const navigate = useNavigate();
   const { waypointId } = useParams<{ waypointId?: string }>();
   const [searchParams] = useSearchParams();
@@ -48,37 +65,12 @@ export const TimelinePage = ({
     }
   }, [searchParams, setActiveFilter]);
 
-  // Setup GSAP scroll trigger
+  // Auto-scroll to waypoint when navigating directly to /waypoint/:id.
+  // Intentionally NOT dependent on viewport height: on mobile the URL bar
+  // showing/hiding fires resize events, which would re-trigger the smooth scroll.
   useEffect(() => {
-    const updateScroll = () => {
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalScroll > 0) {
-        const progress = Math.min(1, Math.max(0, window.scrollY / totalScroll));
-        setScrollProgress(progress);
-      }
-    };
-
-    const trigger = ScrollTrigger.create({
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: 0.1,
-      onUpdate: (self) => {
-        setScrollProgress(self.progress);
-      },
-    });
-
-    window.addEventListener('scroll', updateScroll, { passive: true });
-    requestAnimationFrame(updateScroll);
-
-    return () => {
-      trigger.kill();
-      window.removeEventListener('scroll', updateScroll);
-    };
-  }, [setScrollProgress]);
-
-  // Auto-scroll to waypoint when navigating directly to /waypoint/:id
-  useEffect(() => {
-    if (activeEntry && viewport.height) {
+    const dialog = dialogRef.current;
+    if (activeEntry) {
       const targetProgress = activeEntry.routeProgressPercentage;
       const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
       if (totalScroll > 0) {
@@ -87,13 +79,13 @@ export const TimelinePage = ({
           behavior: 'smooth',
         });
       }
-      dialogRef.current?.showModal();
-    } else if (!activeEntry) {
-      if (dialogRef.current?.open) {
-        dialogRef.current.close();
+      if (dialog && !dialog.open) {
+        dialog.showModal();
       }
+    } else if (dialog?.open) {
+      dialog.close();
     }
-  }, [activeEntry, viewport.height]);
+  }, [activeEntry]);
 
   const routePath = useMemo(() => {
     if (!viewport.width || !viewport.height) return '';
@@ -121,9 +113,12 @@ export const TimelinePage = ({
     return new Map(positions.map((position) => [position.id, position]));
   }, [positions]);
 
-  const openWaypoint = (entry: TimelineItem) => {
-    void navigate(`/waypoint/${entry.id}`);
-  };
+  const openWaypoint = useCallback(
+    (entry: TimelineItem) => {
+      void navigate(`/waypoint/${entry.id}`);
+    },
+    [navigate]
+  );
 
   const closeDialog = () => {
     const dialog = dialogRef.current;
@@ -155,17 +150,18 @@ export const TimelinePage = ({
       : 'min-h-[380vh]'
     : 'min-h-[400vh]';
 
+  // Page height changes with filter/layout, so re-measure progress.
+  useEffect(() => {
+    refreshScrollProgress();
+  }, [minHeightClass]);
+
   return (
     <main className={`relative ${minHeightClass} text-slate-100`}>
-      {routePath ? <TopoBackground routePath={routePath} scrollProgress={scrollProgress} /> : null}
+      {routePath ? <TopoBackground routePath={routePath} /> : null}
 
       {routePath ? (
         isMobile ? (
-          <MobileTimelineView
-            scrollProgress={scrollProgress}
-            activeFilter={activeFilter}
-            onSelectEntry={openWaypoint}
-          />
+          <MobileTimelineView activeFilter={activeFilter} onSelectEntry={openWaypoint} />
         ) : (
           <div className="pointer-events-none fixed inset-0 z-10" aria-hidden="true">
             {timeline.map((entry) => {
@@ -176,23 +172,14 @@ export const TimelinePage = ({
               const position = positionMap.get(entry.id);
               if (!position) return null;
 
-              const isReached = scrollProgress >= entry.routeProgressPercentage;
-
               return (
-                <div
+                <DesktopWaypoint
                   key={entry.id}
-                  className="pointer-events-auto absolute cursor-pointer"
-                  onClick={() => openWaypoint(entry)}
-                >
-                  <WaypointCard
-                    type={entry.type}
-                    date={entry.date}
-                    title={entry.title}
-                    top={`${position.y}px`}
-                    left={`${position.x}px`}
-                    isReached={isReached}
-                  />
-                </div>
+                  entry={entry}
+                  x={position.x}
+                  y={position.y}
+                  onSelect={openWaypoint}
+                />
               );
             })}
           </div>

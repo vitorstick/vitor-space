@@ -73,7 +73,6 @@ export const WaypointsOverlay = ({
     <>
       {isMobile ? (
         <MobileTimelineView
-          scrollProgress={scrollProgress}
           activeFilter={activeFilter}
           onSelectEntry={openDialog}
         />

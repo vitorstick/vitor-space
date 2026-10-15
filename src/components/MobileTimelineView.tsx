@@ -1,33 +1,32 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { Building2, Code2, Compass, Mountain, ChevronRight, CheckCircle2 } from 'lucide-react';
 import type { TimelineItem, TimelineType } from '../models/TimelineItem';
 import { timeline } from '../data/timeline';
+import { useScrollProgress } from '../lib/scrollProgress';
 
 type MobileTimelineViewProps = {
-  scrollProgress: number;
   activeFilter: 'all' | TimelineType;
   onSelectEntry: (entry: TimelineItem) => void;
 };
 
+const getIcon = (type: TimelineType, isReached: boolean) => {
+  const cls = isReached ? 'text-lime-300' : 'text-lime-500/70';
+  switch (type) {
+    case 'location':
+      return <Building2 size={18} className={cls} />;
+    case 'code':
+      return <Code2 size={18} className={cls} />;
+    case 'project':
+      return <Mountain size={18} className={cls} />;
+    default:
+      return <Compass size={18} className={cls} />;
+  }
+};
+
 export const MobileTimelineView = ({
-  scrollProgress,
   activeFilter,
   onSelectEntry,
 }: MobileTimelineViewProps) => {
-  const getIcon = (type: TimelineType, isReached: boolean) => {
-    const cls = isReached ? 'text-lime-300' : 'text-lime-500/70';
-    switch (type) {
-      case 'location':
-        return <Building2 size={18} className={cls} />;
-      case 'code':
-        return <Code2 size={18} className={cls} />;
-      case 'project':
-        return <Mountain size={18} className={cls} />;
-      default:
-        return <Compass size={18} className={cls} />;
-    }
-  };
-
   const filteredItems = useMemo(() => {
     return timeline.filter(
       (entry) => activeFilter === 'all' || entry.type === activeFilter
@@ -53,16 +52,44 @@ export const MobileTimelineView = ({
               ? (index / (filteredItems.length - 1)) * 0.9
               : 0;
 
-          const isReached =
-            activeFilter === 'all'
-              ? scrollProgress >= entry.routeProgressPercentage
-              : scrollProgress >= normalizedTarget;
+          const reachTarget =
+            activeFilter === 'all' ? entry.routeProgressPercentage : normalizedTarget;
+
+          return (
+            <MobileTimelineCard
+              key={entry.id}
+              entry={entry}
+              reachTarget={reachTarget}
+              onSelectEntry={onSelectEntry}
+            />
+          );
+        })}
+
+        {/* End of Stream Marker */}
+        <div className="relative flex items-center gap-2 pt-2 text-[10px] font-mono text-lime-400/60 uppercase tracking-widest">
+          <div className="absolute -left-[27px] w-2 h-2 rounded-full bg-lime-400/60" />
+          <CheckCircle2 size={13} className="text-lime-400/70" />
+          <span>// STREAM_END: ALL {filteredItems.length} HUBS LOADED</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+type MobileTimelineCardProps = {
+  entry: TimelineItem;
+  reachTarget: number;
+  onSelectEntry: (entry: TimelineItem) => void;
+};
+
+// Only re-renders when its own "reached" state flips, not on every scroll frame.
+const MobileTimelineCard = memo(({ entry, reachTarget, onSelectEntry }: MobileTimelineCardProps) => {
+  const isReached = useScrollProgress((p) => p >= reachTarget);
 
           return (
             <div
-              key={entry.id}
               onClick={() => onSelectEntry(entry)}
-              className={`relative flex flex-col gap-2.5 p-4 rounded-xl border backdrop-blur-md transition-all cursor-pointer group ${
+              className={`relative flex flex-col gap-2.5 p-4 rounded-xl border transition-[background-color,border-color,box-shadow] cursor-pointer group ${
                 isReached
                   ? 'bg-[#141a12]/90 border-lime-400/80 shadow-[0_0_20px_rgba(163,230,53,0.2)]'
                   : 'bg-[#10130f]/80 border-[#242e20] hover:border-[#384a32]'
@@ -141,15 +168,5 @@ export const MobileTimelineView = ({
               </div>
             </div>
           );
-        })}
-
-        {/* End of Stream Marker */}
-        <div className="relative flex items-center gap-2 pt-2 text-[10px] font-mono text-lime-400/60 uppercase tracking-widest">
-          <div className="absolute -left-[27px] w-2 h-2 rounded-full bg-lime-400/60" />
-          <CheckCircle2 size={13} className="text-lime-400/70" />
-          <span>// STREAM_END: ALL {filteredItems.length} HUBS LOADED</span>
-        </div>
-      </div>
-    </div>
-  );
-};
+});
+MobileTimelineCard.displayName = 'MobileTimelineCard';
