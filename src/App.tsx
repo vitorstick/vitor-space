@@ -67,6 +67,7 @@ function App() {
           <Route path="/blog/:id" element={<BlogPostPage />} />
           <Route path="/blog/:slug" element={<BlogPostPage />} />
           <Route path="/ask-ai" element={<AskAIPage />} />
+          <Route path="/ask" element={<AskAIPage />} />
           <Route path="/chat" element={<AskAIPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>

@@ -2,15 +2,7 @@
 
 import { timeline } from '../data/timeline';
 
-export type AIAvailabilityStatus =
-  | 'readily'
-  | 'available'
-  | 'after-download'
-  | 'downloadable'
-  | 'downloading'
-  | 'unavailable'
-  | 'no'
-  | 'unsupported';
+export type AIAvailabilityStatus = Availability;
 
 export interface ChatMessage {
   id: string;
@@ -34,50 +26,29 @@ export interface PromptExecutionOptions {
   signal?: AbortSignal;
 }
 
-export interface LanguageModelSessionInstance {
-  prompt(input: string, options?: { signal?: AbortSignal }): Promise<string>;
-  promptStreaming(
-    input: string,
-    options?: { signal?: AbortSignal }
-  ): AsyncIterable<string> | ReadableStream<string>;
-  destroy(): void;
-}
+export const LM_EXPECTED_INPUTS: LanguageModelExpected[] = [{ type: 'text', languages: ['en'] }];
+export const LM_EXPECTED_OUTPUTS: LanguageModelExpected[] = [{ type: 'text', languages: ['en'] }];
 
-export interface LanguageModelFactory {
-  availability?(options?: unknown): Promise<string>;
-  capabilities?(): Promise<{ available: 'readily' | 'after-download' | 'no' }>;
-  create(options?: {
-    systemPrompt?: string;
-    temperature?: number;
-    topK?: number;
-    signal?: AbortSignal;
-    monitor?: (monitor: EventTarget) => void;
-  }): Promise<LanguageModelSessionInstance>;
-}
-
-// Factory interfaces for Chrome Prompt API (Gemini Nano)
-export type AIApiWindow = {
-  ai?: {
-    languageModel?: LanguageModelFactory;
-    assistant?: LanguageModelFactory;
-  };
-  LanguageModel?: LanguageModelFactory;
+export const LM_CORE_OPTIONS: LanguageModelCreateCoreOptions = {
+  expectedInputs: LM_EXPECTED_INPUTS,
+  expectedOutputs: LM_EXPECTED_OUTPUTS,
 };
 
 /**
  * Accesses the Chrome Built-in AI LanguageModel factory if available
  */
-export function getLanguageModelAPI(): LanguageModelFactory | null {
-  if (typeof window === 'undefined') return null;
+export function getLanguageModelAPI(): typeof LanguageModel | null {
+  if (typeof LanguageModel !== 'undefined') {
+    return LanguageModel;
+  }
+  const anyGlobal =
+    typeof window !== 'undefined'
+      ? (window as unknown as { LanguageModel?: typeof LanguageModel })
+      : typeof self !== 'undefined'
+      ? (self as unknown as { LanguageModel?: typeof LanguageModel })
+      : null;
 
-  const anyWin = window as unknown as AIApiWindow;
-
-  return (
-    anyWin.ai?.languageModel ||
-    anyWin.ai?.assistant ||
-    anyWin.LanguageModel ||
-    null
-  );
+  return anyGlobal?.LanguageModel || null;
 }
 
 /**
@@ -87,36 +58,23 @@ export async function checkLanguageModelAvailability(): Promise<AIAvailabilitySt
   try {
     const api = getLanguageModelAPI();
     if (!api) {
-      return 'unsupported';
+      return 'unavailable';
     }
 
     if (typeof api.availability === 'function') {
-      const status = (await api.availability()) as AIAvailabilityStatus;
-      return status || 'unsupported';
+      const status = await api.availability(LM_CORE_OPTIONS);
+      return status || 'unavailable';
     }
 
-    if (typeof api.capabilities === 'function') {
-      const caps = await api.capabilities();
-      if (caps?.available) {
-        return caps.available;
-      }
-    }
-
-    return 'unsupported';
+    return 'unavailable';
   } catch (err) {
     console.debug('Language Model availability check failed:', err);
-    return 'unsupported';
+    return 'unavailable';
   }
 }
 
-export function isLanguageModelUsable(status: AIAvailabilityStatus): boolean {
-  return (
-    status === 'readily' ||
-    status === 'available' ||
-    status === 'after-download' ||
-    status === 'downloadable' ||
-    status === 'downloading'
-  );
+export function isLanguageModelUsable(status?: AIAvailabilityStatus | null): boolean {
+  return status === 'available' || status === 'downloadable' || status === 'downloading';
 }
 
 /**
@@ -153,6 +111,9 @@ ${waypoints.join('\n\n')}
 `;
 }
 
+// Module-level precompiled factual context to avoid runtime recalculation
+export const TIMELINE_FACTS: string = compileTimelineFacts();
+
 /**
  * Returns dynamic system instructions tailored to the chosen temperature level
  */
@@ -169,15 +130,24 @@ export function getSystemPromptForTemperature(temperature: number): string {
 }
 
 /**
- * Builds a grounded prompt envelope for on-device Gemini Nano with dynamic tone based on temperature
+ * Maps numeric temperature to Chrome Prompt API's web samplingMode enum
+ */
+export function temperatureToSamplingMode(temperature: number): LanguageModelSamplingMode {
+  if (temperature <= 0.1) return 'most-predictable';
+  if (temperature <= 0.3) return 'predictable';
+  if (temperature <= 0.6) return 'balanced';
+  if (temperature <= 0.85) return 'creative';
+  return 'most-creative';
+}
+
+/**
+ * Builds a grounded prompt envelope for fallback simulation or non-reusable contexts
  */
 export function buildGroundedPrompt(
   query: string,
   conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [],
   temperature: number = DEFAULT_AI_TEMPERATURE
 ): string {
-  const facts = compileTimelineFacts();
-
   let historySection = '';
   if (conversationHistory.length > 0) {
     const recent = conversationHistory.slice(-3);
@@ -187,32 +157,151 @@ export function buildGroundedPrompt(
   }
 
   if (temperature <= 0.2) {
-    return `You are Vitor Ferreira's official portfolio AI assistant. Answer the user's question accurately, concisely, and factually using ONLY the verified facts below. Do NOT make up or assume any external information. If the answer is not in the facts, state that it is not in Vitor's verified timeline.
-
-${facts}
-
-${historySection}USER QUESTION: ${query}
-
-CONCISE FACTUAL ANSWER:`;
+    return `Answer the user's question accurately, concisely, and factually using ONLY the verified timeline facts. Do NOT make up or assume any external information.\n\n${historySection}USER QUESTION: ${query}\n\nCONCISE FACTUAL ANSWER:`;
   }
 
   if (temperature <= 0.6) {
-    return `You are Vitor Ferreira's portfolio AI assistant. Provide an engaging, insightful, and well-rounded answer using the timeline facts below as context.
-
-${facts}
-
-${historySection}USER QUESTION: ${query}
-
-DETAILED & ENGAGING ANSWER:`;
+    return `Provide an engaging, insightful, and well-rounded answer using the timeline facts as context.\n\n${historySection}USER QUESTION: ${query}\n\nDETAILED & ENGAGING ANSWER:`;
   }
 
-  return `You are Vitor Ferreira's AI assistant in creative & speculative experimentation mode. Use the facts below as background inspiration, but feel free to extrapolate, be imaginative, hypothesize, make assumptions, and speculate boldly about what Vitor could build, his tech leadership style, and futuristic engineering directions!
+  return `Feel free to extrapolate, be imaginative, hypothesize, make assumptions, and speculate boldly about what Vitor could build and his futuristic engineering directions!\n\n${historySection}USER QUESTION: ${query}\n\nCREATIVE & SPECULATIVE ANSWER:`;
+}
 
-${facts}
+// ---------------------------------------------------------------------------
+// Base Session Caching & Session Reuse via clone()
+// ---------------------------------------------------------------------------
 
-${historySection}USER QUESTION: ${query}
+let cachedBaseSessionPromise: Promise<LanguageModel> | null = null;
+let cachedBaseKey = '';
 
-CREATIVE & SPECULATIVE ANSWER (FEEL FREE TO MAKE ASSUMPTIONS AND HYPOTHESIZE):`;
+export async function getBaseSession(
+  temperature: number = DEFAULT_AI_TEMPERATURE,
+  onDownloadProgress?: (percent: number) => void,
+  signal?: AbortSignal
+): Promise<LanguageModel> {
+  const samplingMode = temperatureToSamplingMode(temperature);
+  const systemInstruction = getSystemPromptForTemperature(temperature);
+  const cacheKey = `${samplingMode}|${systemInstruction}`;
+
+  if (cachedBaseSessionPromise && cachedBaseKey === cacheKey) {
+    return cachedBaseSessionPromise;
+  }
+
+  if (cachedBaseSessionPromise) {
+    void cachedBaseSessionPromise.then((s) => s.destroy()).catch(() => {});
+    cachedBaseSessionPromise = null;
+  }
+
+  const api = getLanguageModelAPI();
+  if (!api) {
+    throw new Error('Chrome Prompt API (Gemini Nano) is not supported or enabled on this browser.');
+  }
+
+  cachedBaseKey = cacheKey;
+
+  const createOptions: LanguageModelCreateOptions = {
+    expectedInputs: LM_EXPECTED_INPUTS,
+    expectedOutputs: LM_EXPECTED_OUTPUTS,
+    samplingMode,
+    signal,
+    initialPrompts: [
+      {
+        role: 'system',
+        content: `${systemInstruction}\n\n${TIMELINE_FACTS}`,
+      },
+    ],
+    monitor: (monitor: CreateMonitor) => {
+      monitor.addEventListener('downloadprogress', (e: ProgressEvent) => {
+        const pct =
+          e.loaded <= 1
+            ? Math.round(e.loaded * 100)
+            : e.total && e.total > 0
+            ? Math.min(100, Math.round((e.loaded / e.total) * 100))
+            : Math.round(e.loaded);
+        onDownloadProgress?.(Math.min(100, Math.max(1, pct)));
+      });
+    },
+  };
+
+  cachedBaseSessionPromise = api.create(createOptions);
+  cachedBaseSessionPromise.catch(() => {
+    cachedBaseSessionPromise = null;
+    cachedBaseKey = '';
+  });
+
+  return cachedBaseSessionPromise;
+}
+
+export async function prewarmAssistant(temperature: number = DEFAULT_AI_TEMPERATURE): Promise<void> {
+  try {
+    const status = await checkLanguageModelAvailability();
+    if (status === 'available') {
+      void getBaseSession(temperature).catch(() => {});
+    }
+  } catch {
+    // Ignore pre-warming errors
+  }
+}
+
+let activeChatSession: LanguageModel | null = null;
+let activeChatTemperature: number = DEFAULT_AI_TEMPERATURE;
+
+export async function getActiveChatSession(
+  temperature: number = DEFAULT_AI_TEMPERATURE,
+  onDownloadProgress?: (percent: number) => void,
+  signal?: AbortSignal
+): Promise<LanguageModel> {
+  if (activeChatSession && activeChatTemperature === temperature) {
+    return activeChatSession;
+  }
+
+  resetChatSession();
+
+  const base = await getBaseSession(temperature, onDownloadProgress, signal);
+  activeChatSession = await base.clone({ signal });
+  activeChatTemperature = temperature;
+
+  activeChatSession.addEventListener('contextoverflow', () => {
+    console.warn('LanguageModel context window exceeded. Initial conversation turns were trimmed.');
+  });
+
+  return activeChatSession;
+}
+
+export function resetChatSession(): void {
+  if (activeChatSession) {
+    try {
+      activeChatSession.destroy();
+    } catch {
+      // Ignore destroy error
+    }
+    activeChatSession = null;
+  }
+}
+
+export function destroyAllSessions(): void {
+  resetChatSession();
+  if (cachedBaseSessionPromise) {
+    void cachedBaseSessionPromise.then((s) => s.destroy()).catch(() => {});
+    cachedBaseSessionPromise = null;
+    cachedBaseKey = '';
+  }
+}
+
+async function consumeStream(
+  stream: ReadableStream<string>,
+  onChunk?: (fullAccumulatedText: string, latestDelta: string) => void,
+  signal?: AbortSignal
+): Promise<string> {
+  let accumulated = '';
+  for await (const chunk of stream) {
+    if (signal?.aborted) {
+      throw signal.reason || new DOMException('Prompt execution aborted.', 'AbortError');
+    }
+    accumulated += chunk;
+    onChunk?.(accumulated, chunk);
+  }
+  return accumulated;
 }
 
 /**
@@ -222,113 +311,45 @@ export async function askTimelineAssistant({
   prompt,
   conversationHistory = [],
   temperature = DEFAULT_AI_TEMPERATURE,
-  topK,
   onChunk,
   onDownloadProgress,
   signal,
 }: PromptExecutionOptions): Promise<string> {
-  const api = getLanguageModelAPI();
-  if (!api) {
-    throw new Error('Chrome Prompt API (Gemini Nano) is not supported or enabled on this browser.');
+  const session = await getActiveChatSession(temperature, onDownloadProgress, signal);
+
+  if (signal?.aborted) {
+    throw signal.reason || new DOMException('Prompt execution aborted.', 'AbortError');
   }
 
-  // topK=1 forces greedy decoding where temperature has no effect.
-  // We dynamically scale topK when temperature rises to unlock token diversity.
-  const computedTopK =
-    topK !== undefined
-      ? topK
-      : temperature <= 0.1
-      ? DEFAULT_AI_TOP_K
-      : Math.min(40, Math.max(4, Math.round(temperature * 40)));
+  // If conversation history is provided from before session clone, ground query with recent context
+  const fullPrompt =
+    conversationHistory.length > 0
+      ? buildGroundedPrompt(prompt, conversationHistory, temperature)
+      : prompt;
 
-  const systemInstruction = getSystemPromptForTemperature(temperature);
-
-  const createOptions = {
-    systemPrompt: systemInstruction,
-    temperature,
-    topK: computedTopK,
-    signal,
-    monitor: (monitor: EventTarget) => {
-      monitor.addEventListener('downloadprogress', (e: Event) => {
-        const progEvent = e as ProgressEvent;
-        if (progEvent.total && progEvent.total > 0) {
-          const pct = Math.min(100, Math.round((progEvent.loaded / progEvent.total) * 100));
-          onDownloadProgress?.(pct);
-        } else if (progEvent.loaded > 0) {
-          const pct =
-            progEvent.loaded <= 1
-              ? Math.round(progEvent.loaded * 100)
-              : Math.round(progEvent.loaded);
-          onDownloadProgress?.(Math.min(99, Math.max(1, pct)));
-        }
-      });
-    },
-  };
-
-  const session = await api.create(createOptions);
-
+  let streamResult: ReadableStream<string>;
   try {
+    streamResult = session.promptStreaming(fullPrompt, { signal });
+  } catch (err) {
     if (signal?.aborted) {
-      throw new Error('Prompt execution aborted.');
+      throw signal.reason || new DOMException('Prompt execution aborted.', 'AbortError');
     }
-
-    const fullPrompt = buildGroundedPrompt(prompt, conversationHistory, temperature);
-
-    // Attempt streaming execution
-    if (typeof session.promptStreaming === 'function') {
-      try {
-        const streamResult = session.promptStreaming(fullPrompt, { signal });
-        let accumulated = '';
-
-        // Check for AsyncIterable
-        if (
-          streamResult &&
-          typeof (streamResult as AsyncIterable<string>)[Symbol.asyncIterator] === 'function'
-        ) {
-          for await (const chunk of streamResult as AsyncIterable<string>) {
-            if (signal?.aborted) break;
-            accumulated += chunk;
-            onChunk?.(accumulated, chunk);
-          }
-          return accumulated;
-        }
-
-        // Check for ReadableStream
-        if (
-          streamResult &&
-          typeof (streamResult as ReadableStream<string>).getReader === 'function'
-        ) {
-          const reader = (streamResult as ReadableStream<string>).getReader();
-          try {
-            while (true) {
-              if (signal?.aborted) break;
-              const { done, value } = await reader.read();
-              if (done) break;
-              if (value) {
-                accumulated += value;
-                onChunk?.(accumulated, value);
-              }
-            }
-          } finally {
-            reader.releaseLock();
-          }
-          return accumulated;
-        }
-      } catch (streamErr) {
-        console.warn('Streaming failed, falling back to direct prompt():', streamErr);
-      }
-    }
-
-    // Fallback to non-streaming prompt()
+    console.warn('promptStreaming threw error, falling back to prompt():', err);
     const result = await session.prompt(fullPrompt, { signal });
     onChunk?.(result, result);
     return result;
-  } finally {
-    try {
-      session.destroy();
-    } catch {
-      // Ignore destroy error
+  }
+
+  try {
+    return await consumeStream(streamResult, onChunk, signal);
+  } catch (streamErr) {
+    if (signal?.aborted || (streamErr instanceof DOMException && streamErr.name === 'AbortError')) {
+      throw streamErr;
     }
+    console.warn('Streaming failed, falling back to direct prompt():', streamErr);
+    const result = await session.prompt(fullPrompt, { signal });
+    onChunk?.(result, result);
+    return result;
   }
 }
 
@@ -442,7 +463,6 @@ Frontend & Mobile Developer in Lisbon.
       `\n\n💡 **Speculative Hypothesis & Creative Extrapolations (T=${temperature.toFixed(2)}):**\nGiven Vitor's track record spanning high-scale fintech (SemmieWealth), incident response (PagerDuty), and on-device Web AI (Chrome Gemini Nano & Prompt API), it is plausible he is exploring hybrid edge-computing architectures, next-gen WebAssembly state machines, or real-time local intelligence pipelines. Even if he hasn't publicly confirmed it yet, his engineering trajectory strongly points towards mastering on-device neural agents that run offline without server roundtrips!`,
       `\n\n🚀 **Creative Engineering Vision (T=${temperature.toFixed(2)}):**\nAssuming Vitor continues blending reactive state architectures with on-device generative models, one could imagine him pioneering micro-frontend architectures with zero-latency local intelligence and self-healing UI systems. His background in both enterprise banking and high-agility startups suggests he values deterministic type safety just as much as cutting-edge exploratory UX.`,
     ];
-    // Alternate or append speculative hypothesis
     const layer = speculativeLayers[Math.floor(Math.random() * speculativeLayers.length)];
     return `${baseAnswer}${layer}`;
   }

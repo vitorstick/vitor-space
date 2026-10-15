@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Sparkles,
   Zap,
@@ -16,6 +16,8 @@ import {
   isLanguageModelUsable,
   askTimelineAssistant,
   generateSimulatedAnswer,
+  prewarmAssistant,
+  resetChatSession,
   DEFAULT_AI_TEMPERATURE,
   type AIAvailabilityStatus,
   type ChatMessage,
@@ -24,12 +26,96 @@ import { AskAIHeader } from '../components/AskAIHeader';
 
 const SUGGESTED_PROMPTS = [
   'What technical stack does Vitor specialize in?',
-  'What is Vitor\'s geographic journey and relocations?',
+  "What is Vitor's geographic journey and relocations?",
   'Where did Vitor work?',
   'How can I connect with Vitor or view his profiles?',
 ];
 
 const STORAGE_KEY_TEMPERATURE = 'ask_vitor_temperature';
+
+interface ChatMessageBubbleProps {
+  message: ChatMessage;
+  copiedId: string | null;
+  onCopy: (id: string, text: string) => void;
+}
+
+const ChatMessageBubble = React.memo(function ChatMessageBubble({
+  message,
+  copiedId,
+  onCopy,
+}: ChatMessageBubbleProps) {
+  const isUser = message.role === 'user';
+
+  return (
+    <div className={`flex gap-3 md:gap-4 ${isUser ? 'justify-end' : 'justify-start'}`}>
+      {!isUser && (
+        <div className="w-8 h-8 rounded-lg bg-lime-950/70 border border-lime-500/40 text-lime-400 flex items-center justify-center shrink-0 mt-1 shadow-[0_0_10px_rgba(163,230,53,0.2)]">
+          <Bot size={16} />
+        </div>
+      )}
+
+      <div
+        className={`max-w-[85%] rounded-2xl p-4 md:p-5 text-sm leading-relaxed space-y-2 ${
+          isUser
+            ? 'bg-lime-950/40 border border-lime-500/40 text-lime-100 rounded-tr-none'
+            : 'bg-black/60 border border-[#232f1e] text-slate-200 rounded-tl-none shadow-lg'
+        }`}
+      >
+        <div className="flex items-center justify-between gap-4 text-[10px] font-mono text-slate-500 pb-1 border-b border-white/5">
+          <span className="flex items-center gap-1.5">
+            {isUser ? (
+              'OPERATOR'
+            ) : (
+              <>
+                <span>TELEMETRY_AI</span>
+                {message.temperature !== undefined && (
+                  <span className="px-1 py-0.5 rounded bg-lime-950/50 text-lime-400/80 border border-lime-500/20 text-[9px]">
+                    T: {message.temperature.toFixed(2)}
+                  </span>
+                )}
+              </>
+            )}
+          </span>
+          <span>{message.timestamp}</span>
+        </div>
+
+        <div className="whitespace-pre-wrap font-sans selection:bg-lime-400 selection:text-black">
+          {message.content}
+          {message.isStreaming && (
+            <span className="inline-block w-2 h-4 ml-1 bg-lime-400 animate-pulse align-middle" />
+          )}
+        </div>
+
+        {!isUser && message.content && !message.isStreaming && (
+          <div className="flex justify-end pt-2">
+            <button
+              onClick={() => onCopy(message.id, message.content)}
+              className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-lime-300 transition-colors cursor-pointer"
+            >
+              {copiedId === message.id ? (
+                <>
+                  <Check size={12} className="text-lime-400" />
+                  <span className="text-lime-400">COPIED</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={12} />
+                  <span>COPY</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {isUser && (
+        <div className="w-8 h-8 rounded-lg bg-black/60 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 mt-1">
+          <User size={16} />
+        </div>
+      )}
+    </div>
+  );
+});
 
 export const AskAIPage = () => {
   const [availability, setAvailability] = useState<AIAvailabilityStatus | null>(null);
@@ -57,6 +143,7 @@ export const AskAIPage = () => {
   const handleTemperatureChange = (newTemp: number) => {
     const clamped = Math.max(0.0, Math.min(1.0, Math.round(newTemp * 100) / 100));
     setTemperature(clamped);
+    resetChatSession();
     try {
       localStorage.setItem(STORAGE_KEY_TEMPERATURE, clamped.toString());
     } catch {
@@ -67,8 +154,10 @@ export const AskAIPage = () => {
   const abortControllerRef = useRef<AbortController | null>(null);
   const simulationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const simulationIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   const clearSimulationTimers = () => {
     if (simulationTimeoutRef.current) {
@@ -79,9 +168,13 @@ export const AskAIPage = () => {
       clearInterval(simulationIntervalRef.current);
       simulationIntervalRef.current = null;
     }
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
   };
 
-  // Check browser support on load
+  // Check browser support and pre-warm on load
   useEffect(() => {
     let isMounted = true;
     void checkLanguageModelAvailability().then((status) => {
@@ -89,33 +182,60 @@ export const AskAIPage = () => {
         setAvailability(status);
         if (!isLanguageModelUsable(status)) {
           setUseSimulation(true);
+        } else if (status === 'available') {
+          void prewarmAssistant(temperature);
         }
       }
     });
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [temperature]);
 
   // Auto-focus input on mount
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
 
-  // Cleanup pending tasks on unmount
+  // Cleanup pending tasks and session on unmount
   useEffect(() => {
     return () => {
       clearSimulationTimers();
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      resetChatSession();
     };
   }, []);
 
-  // Auto-scroll on new message content
+  // Auto-scroll handler: instant scroll if streaming, smooth if idle or starting
+  const scrollToBottom = useCallback((instant = false) => {
+    if (!messagesEndRef.current) return;
+    const container = scrollContainerRef.current;
+    if (container) {
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight < 150;
+      if (isNearBottom || !instant) {
+        messagesEndRef.current.scrollIntoView({
+          behavior: instant ? 'auto' : 'smooth',
+        });
+      }
+    } else {
+      messagesEndRef.current.scrollIntoView({
+        behavior: instant ? 'auto' : 'smooth',
+      });
+    }
+  }, []);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isGenerating]);
+    scrollToBottom(isGenerating);
+  }, [messages, isGenerating, scrollToBottom]);
+
+  const handleCopy = useCallback((id: string, text: string) => {
+    void navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  }, []);
 
   const handleSendMessage = async (promptToSend?: string) => {
     const text = (promptToSend || inputText).trim();
@@ -192,6 +312,8 @@ export const AskAIPage = () => {
         content: m.content,
       }));
 
+      let pendingAccumulated = '';
+
       await askTimelineAssistant({
         prompt: text,
         conversationHistory: history,
@@ -201,22 +323,45 @@ export const AskAIPage = () => {
           setDownloadProgress(pct);
         },
         onChunk: (accumulated) => {
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: accumulated, isStreaming: true }
-                : msg
-            )
-          );
+          pendingAccumulated = accumulated;
+          // Throttle updates via requestAnimationFrame to avoid per-token layout thrashing
+          if (rafIdRef.current === null) {
+            rafIdRef.current = requestAnimationFrame(() => {
+              rafIdRef.current = null;
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? { ...msg, content: pendingAccumulated, isStreaming: true }
+                    : msg
+                )
+              );
+            });
+          }
         },
       });
 
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === assistantMessageId ? { ...msg, isStreaming: false } : msg
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content: pendingAccumulated || msg.content,
+                isStreaming: false,
+              }
+            : msg
         )
       );
     } catch (err: unknown) {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+
       if (!abortController.signal.aborted) {
         const errorMsg =
           err instanceof Error
@@ -226,10 +371,10 @@ export const AskAIPage = () => {
           prev.map((msg) =>
             msg.id === assistantMessageId
               ? {
-                ...msg,
-                content: `⚠️ // TELEMETRY_ERROR: ${errorMsg}\n\nSwitching to simulated telemetry assistant mode.`,
-                isStreaming: false,
-              }
+                  ...msg,
+                  content: `⚠️ // TELEMETRY_ERROR: ${errorMsg}\n\nSwitching to simulated telemetry assistant mode.`,
+                  isStreaming: false,
+                }
               : msg
           )
         );
@@ -256,14 +401,9 @@ export const AskAIPage = () => {
 
   const handleClearChat = () => {
     handleStop();
+    resetChatSession();
     setMessages([]);
     textareaRef.current?.focus();
-  };
-
-  const handleCopy = (id: string, text: string) => {
-    void navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
@@ -299,7 +439,10 @@ export const AskAIPage = () => {
           </div>
 
           {/* Messages Scroll Area */}
-          <div className="flex-1 p-5 md:p-6 overflow-y-auto space-y-6">
+          <div
+            ref={scrollContainerRef}
+            className="flex-1 p-5 md:p-6 overflow-y-auto space-y-6"
+          >
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center py-10 space-y-6">
                 <div className="p-4 rounded-2xl bg-lime-950/30 border border-lime-500/20 text-lime-400 shadow-[0_0_25px_rgba(163,230,53,0.15)]">
@@ -330,76 +473,12 @@ export const AskAIPage = () => {
               </div>
             ) : (
               messages.map((msg) => (
-                <div
+                <ChatMessageBubble
                   key={msg.id}
-                  className={`flex gap-3 md:gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'
-                    }`}
-                >
-                  {msg.role === 'assistant' && (
-                    <div className="w-8 h-8 rounded-lg bg-lime-950/70 border border-lime-500/40 text-lime-400 flex items-center justify-center shrink-0 mt-1 shadow-[0_0_10px_rgba(163,230,53,0.2)]">
-                      <Bot size={16} />
-                    </div>
-                  )}
-
-                  <div
-                    className={`max-w-[85%] rounded-2xl p-4 md:p-5 text-sm leading-relaxed space-y-2 ${msg.role === 'user'
-                      ? 'bg-lime-950/40 border border-lime-500/40 text-lime-100 rounded-tr-none'
-                      : 'bg-black/60 border border-[#232f1e] text-slate-200 rounded-tl-none shadow-lg'
-                      }`}
-                  >
-                    <div className="flex items-center justify-between gap-4 text-[10px] font-mono text-slate-500 pb-1 border-b border-white/5">
-                      <span className="flex items-center gap-1.5">
-                        {msg.role === 'user' ? (
-                          'OPERATOR'
-                        ) : (
-                          <>
-                            <span>TELEMETRY_AI</span>
-                            {msg.temperature !== undefined && (
-                              <span className="px-1 py-0.5 rounded bg-lime-950/50 text-lime-400/80 border border-lime-500/20 text-[9px]">
-                                T: {msg.temperature.toFixed(2)}
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </span>
-                      <span>{msg.timestamp}</span>
-                    </div>
-
-                    <div className="whitespace-pre-wrap font-sans selection:bg-lime-400 selection:text-black">
-                      {msg.content}
-                      {msg.isStreaming && (
-                        <span className="inline-block w-2 h-4 ml-1 bg-lime-400 animate-pulse align-middle" />
-                      )}
-                    </div>
-
-                    {msg.role === 'assistant' && msg.content && !msg.isStreaming && (
-                      <div className="flex justify-end pt-2">
-                        <button
-                          onClick={() => handleCopy(msg.id, msg.content)}
-                          className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-400 hover:text-lime-300 transition-colors cursor-pointer"
-                        >
-                          {copiedId === msg.id ? (
-                            <>
-                              <Check size={12} className="text-lime-400" />
-                              <span className="text-lime-400">COPIED</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy size={12} />
-                              <span>COPY</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {msg.role === 'user' && (
-                    <div className="w-8 h-8 rounded-lg bg-black/60 border border-slate-700 text-slate-300 flex items-center justify-center shrink-0 mt-1">
-                      <User size={16} />
-                    </div>
-                  )}
-                </div>
+                  message={msg}
+                  copiedId={copiedId}
+                  onCopy={handleCopy}
+                />
               ))
             )}
             <div ref={messagesEndRef} />

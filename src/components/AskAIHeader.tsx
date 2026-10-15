@@ -38,7 +38,7 @@ export const AskAIHeader = ({
   const [showParams, setShowParams] = useState(false);
 
   const isModelDownloadRequired =
-    availability === 'after-download' || availability === 'downloadable';
+    availability === 'downloadable' || availability === 'downloading';
 
   const PRESETS = [
     { label: '0.0 (Strict Facts)', value: 0.0, desc: 'Greedy decoding: zero speculation' },
@@ -98,13 +98,13 @@ export const AskAIHeader = ({
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-[#232f1e] bg-black/60 text-[11px] font-mono">
             <span
               className={`w-1.5 h-1.5 rounded-full ${
-                !useSimulation && isLanguageModelUsable(availability || 'unsupported')
+                !useSimulation && isLanguageModelUsable(availability)
                   ? 'bg-lime-400 shadow-[0_0_6px_#a3e635]'
                   : 'bg-amber-400 shadow-[0_0_6px_#fbbf24]'
               }`}
             />
             <span className="text-slate-300 text-[10px]">
-              {!useSimulation && isLanguageModelUsable(availability || 'unsupported')
+              {!useSimulation && isLanguageModelUsable(availability)
                 ? isModelDownloadRequired
                   ? 'DOWNLOADABLE'
                   : 'ON-DEVICE'
@@ -230,7 +230,7 @@ export const AskAIHeader = ({
           <div className="text-[10px] text-slate-400 flex items-start gap-1.5 leading-relaxed">
             <Sparkles size={12} className="text-lime-400 shrink-0 mt-0.5" />
             <span>
-              <strong>How it works:</strong> At <strong>T &le; 0.2</strong>, the prompt enforces strict timeline fact-checking and greedy token sampling (topK=1). At <strong>T &ge; 0.6</strong>, candidate diversity unlocks (topK up to 40) and system instructions explicitly permit the model to make creative assumptions, hypothesize future projects, and extrapolate beyond verified milestones.
+              <strong>How it works:</strong> At <strong>T &le; 0.2</strong>, system instructions enforce strict timeline fact-checking and highest determinism (most-predictable sampling). At <strong>T &ge; 0.6</strong>, creative sampling unlocks and system instructions explicitly permit the model to hypothesize, explore analogies, and extrapolate beyond verified milestones.
             </span>
           </div>
         </div>

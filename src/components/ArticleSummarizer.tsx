@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Sparkles,
   Zap,
@@ -18,6 +18,7 @@ import {
   isSummarizerUsable,
   generateArticleSummary,
   prepareTextForSummarization,
+  clearSummarizerCache,
   type SummarizerStyleType,
   type SummarizerLengthType,
   type SummarizerAvailability,
@@ -33,7 +34,7 @@ interface ArticleSummarizerProps {
 
 const TYPE_OPTIONS: { id: SummarizerStyleType; label: string; description: string }[] = [
   { id: 'key-points', label: 'KEY POINTS', description: 'Bullet list of core insights' },
-  { id: 'tl;dr', label: 'TL;DR', description: 'Concise executive overview' },
+  { id: 'tldr', label: 'TL;DR', description: 'Concise executive overview' },
   { id: 'teaser', label: 'TEASER', description: 'Intriguing preview snippet' },
   { id: 'headline', label: 'HEADLINE', description: 'Punchy single-line synopsis' },
 ];
@@ -65,18 +66,34 @@ export const ArticleSummarizer: React.FC<ArticleSummarizerProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Check browser support on mount
+  // Memoize sanitized text to avoid re-parsing DOM on every render
+  const cleanArticleText = useMemo(() => {
+    return prepareTextForSummarization(rawMarkdown, rawHtml);
+  }, [rawMarkdown, rawHtml]);
+
+  // Check browser support on mount with parity options
   useEffect(() => {
     let isMounted = true;
-    void checkSummarizerAvailability().then((status) => {
+    void checkSummarizerAvailability({
+      type: summaryType === 'tl;dr' ? 'tldr' : summaryType,
+      format: 'markdown',
+      length: summaryLength,
+      outputLanguage: 'en',
+      expectedInputLanguages: ['en'],
+    }).then((status) => {
       if (isMounted) {
         setAvailability(status);
       }
     });
+
     return () => {
       isMounted = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      void clearSummarizerCache();
     };
-  }, []);
+  }, [summaryType, summaryLength]);
 
   // If not supported by browser, do not render anything
   if (!availability || !isSummarizerUsable(availability)) {
@@ -95,16 +112,17 @@ export const ArticleSummarizer: React.FC<ArticleSummarizerProps> = ({
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
 
-    const cleanText = prepareTextForSummarization(rawMarkdown, rawHtml);
-    if (!cleanText) {
+    if (!cleanArticleText) {
       setError('Article content is empty or could not be parsed.');
       setIsGenerating(false);
       return;
     }
 
+    let hasReceivedFirstChunk = false;
+
     try {
       await generateArticleSummary({
-        content: cleanText,
+        content: cleanArticleText,
         type: summaryType,
         format: 'markdown',
         length: summaryLength,
@@ -114,8 +132,11 @@ export const ArticleSummarizer: React.FC<ArticleSummarizerProps> = ({
           setDownloadProgress(pct);
         },
         onChunk: (accumulated) => {
+          if (!hasReceivedFirstChunk) {
+            hasReceivedFirstChunk = true;
+            setDownloadProgress(null);
+          }
           setSummaryText(accumulated);
-          setDownloadProgress(null);
         },
       });
     } catch (err: unknown) {
@@ -145,7 +166,7 @@ export const ArticleSummarizer: React.FC<ArticleSummarizerProps> = ({
   };
 
   const isModelDownloadRequired =
-    availability === 'after-download' || availability === 'downloadable';
+    availability === 'downloadable' || availability === 'downloading';
 
   return (
     <div
@@ -276,14 +297,16 @@ export const ArticleSummarizer: React.FC<ArticleSummarizerProps> = ({
               <div className="flex items-center justify-between text-xs font-mono text-lime-300">
                 <span className="flex items-center gap-1.5">
                   <DownloadCloud size={14} className="animate-bounce" />
-                  DOWNLOADING_GEMINI_NANO_MODEL_WEIGHTS...
+                  {downloadProgress >= 100
+                    ? 'INITIALIZING_GEMINI_NANO_MODEL...'
+                    : 'DOWNLOADING_GEMINI_NANO_MODEL_WEIGHTS...'}
                 </span>
                 <span className="font-bold">{downloadProgress}%</span>
               </div>
               <div className="w-full h-1.5 bg-black rounded-full overflow-hidden border border-lime-500/30">
                 <div
                   className="h-full bg-lime-400 transition-all duration-300"
-                  style={{ width: `${downloadProgress}%` }}
+                  style={{ width: `${Math.min(100, downloadProgress)}%` }}
                 />
               </div>
             </div>
